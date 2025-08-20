@@ -9,6 +9,10 @@ import UIKit
 
 final class TrackersViewController: UIViewController {
 
+    // По ТЗ хранилища данных
+    var categories: [TrackerCategory] = []
+    var completedTrackers: [TrackerRecord] = []
+
     // MARK: - UI
 
     private let titleLabel: UILabel = {
@@ -21,22 +25,22 @@ final class TrackersViewController: UIViewController {
 
     private let plusButton: UIButton = {
         let button = UIButton(type: .system)
-        // Используем SF Symbol или свою PNG иконку (если у тебя есть)
         button.setImage(UIImage(systemName: "plus"), for: .normal)
-        button.tintColor = .black // чёрный, как в дизайне
+        button.tintColor = .black
         button.translatesAutoresizingMaskIntoConstraints = false
         return button
     }()
 
-    private let dateButton: UIButton = {
-        let button = UIButton(type: .system)
-        button.setTitle("14.12.22", for: .normal)
-        button.titleLabel?.font = .systemFont(ofSize: 14)
-        button.layer.cornerRadius = 8
-        button.backgroundColor = .systemGray6
-        button.setTitleColor(.black, for: .normal)
-        button.translatesAutoresizingMaskIntoConstraints = false
-        return button
+    // 👇 UIDatePicker вместо прежней кнопки даты
+    private let datePicker: UIDatePicker = {
+        let picker = UIDatePicker()
+        picker.datePickerMode = .dateAndTime         // и дата, и время
+        picker.preferredDatePickerStyle = .compact   // компактный, как в макете
+        picker.locale = Locale(identifier: "ru_RU")
+        picker.timeZone = .current
+        picker.minuteInterval = 1
+        picker.translatesAutoresizingMaskIntoConstraints = false
+        return picker
     }()
 
     private let searchBar: UISearchBar = {
@@ -47,8 +51,8 @@ final class TrackersViewController: UIViewController {
     }()
 
     private let placeholderImage: UIImageView = {
-        let imageView = UIImageView(image: UIImage(named: "placeholderStar")) // твоя иконка!
-        imageView.tintColor = .clear // отключаем системный цвет
+        let imageView = UIImageView(image: UIImage(named: "placeholderStar"))
+        imageView.tintColor = .clear
         imageView.contentMode = .scaleAspectFit
         imageView.translatesAutoresizingMaskIntoConstraints = false
         return imageView
@@ -69,11 +73,27 @@ final class TrackersViewController: UIViewController {
         super.viewDidLoad()
         view.backgroundColor = .systemBackground
 
-        [titleLabel, plusButton, dateButton, searchBar, placeholderImage, placeholderLabel].forEach {
+        [titleLabel, plusButton, datePicker, searchBar, placeholderImage, placeholderLabel].forEach {
             view.addSubview($0)
         }
 
+        datePicker.addTarget(self, action: #selector(dateChanged(_:)), for: .valueChanged)
+        plusButton.addTarget(self, action: #selector(didTapPlus), for: .touchUpInside)
+
         setupConstraints()
+    }
+
+    // MARK: - Actions
+
+    @objc private func dateChanged(_ sender: UIDatePicker) {
+        // здесь фильтруй/обновляй контент под выбранную дату+время
+        // например: collectionView.reloadData()
+        print("Выбрано:", formatted(sender.date))
+    }
+
+    @objc private func didTapPlus() {
+        // открыть создание трекера
+        print("Плюс нажали")
     }
 
     // MARK: - Constraints
@@ -81,14 +101,13 @@ final class TrackersViewController: UIViewController {
     private func setupConstraints() {
         NSLayoutConstraint.activate([
             plusButton.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
-            plusButton.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 0),
+            plusButton.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
             plusButton.widthAnchor.constraint(equalToConstant: 44),
             plusButton.heightAnchor.constraint(equalToConstant: 44),
 
-            dateButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
-            dateButton.centerYAnchor.constraint(equalTo: plusButton.centerYAnchor),
-            dateButton.widthAnchor.constraint(equalToConstant: 80),
-            dateButton.heightAnchor.constraint(equalToConstant: 32),
+            // 👇 ставим пикер справа, по центру с плюсом
+            datePicker.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
+            datePicker.centerYAnchor.constraint(equalTo: plusButton.centerYAnchor),
 
             titleLabel.leadingAnchor.constraint(equalTo: plusButton.leadingAnchor),
             titleLabel.topAnchor.constraint(equalTo: plusButton.bottomAnchor, constant: 10),
@@ -105,5 +124,14 @@ final class TrackersViewController: UIViewController {
             placeholderLabel.topAnchor.constraint(equalTo: placeholderImage.bottomAnchor, constant: 8),
             placeholderLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor)
         ])
+    }
+
+    // MARK: - Helpers
+
+    private func formatted(_ date: Date) -> String {
+        let df = DateFormatter()
+        df.locale = Locale(identifier: "ru_RU")
+        df.dateFormat = "d MMM yyyy, HH:mm"
+        return df.string(from: date)
     }
 }

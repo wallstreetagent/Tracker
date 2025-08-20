@@ -11,20 +11,23 @@ final class TabBarController: UITabBarController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        let trackersVC = TrackersViewController()
-        trackersVC.tabBarItem = UITabBarItem(
+
+        let trackersNC = UINavigationController(rootViewController: TrackersViewController())
+        trackersNC.tabBarItem = UITabBarItem(
             title: "Трекеры",
-            image: UIImage(named: "tab_trackers_selected"),
+            image: UIImage(named: "tab_trackers_selected"), // твоя иконка
             tag: 0
         )
 
-        let statisticsVC = StatisticsViewController()
-        statisticsVC.tabBarItem = UITabBarItem(
+
+        let statsNC = UINavigationController(rootViewController: StatisticsViewController())
+        statsNC.tabBarItem = UITabBarItem(
             title: "Статистика",
-            image: UIImage(named: "tab_statistics"),
+            image: UIImage(named: "tab_statistics"), // твоя иконка
             tag: 1
         )
 
-        viewControllers = [trackersVC, statisticsVC]
+        viewControllers = [trackersNC, statsNC]
     }
 }
+
