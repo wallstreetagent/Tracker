@@ -13,10 +13,9 @@ protocol TrackerCellDelegate: AnyObject {
 
 final class TrackerCell: UICollectionViewCell {
     static let reuseIdentifier = "TrackerCell"
-
     weak var delegate: TrackerCellDelegate?
 
-    // Внутренняя «карточка» (цветная)
+    // Цвет карточки задаём извне (цвет трекера)
     private let cardView: UIView = {
         let v = UIView()
         v.layer.cornerRadius = 16
@@ -25,9 +24,18 @@ final class TrackerCell: UICollectionViewCell {
         return v
     }()
 
+    // Маленькая «плашка» под эмодзи как в макете
+    private let emojiBadge: UIView = {
+        let v = UIView()
+        v.backgroundColor = UIColor.white.withAlphaComponent(0.3)
+        v.layer.cornerRadius = 12
+        v.translatesAutoresizingMaskIntoConstraints = false
+        return v
+    }()
+
     private let emojiLabel: UILabel = {
         let l = UILabel()
-        l.font = .systemFont(ofSize: 28)
+        l.font = .systemFont(ofSize: 20)
         l.translatesAutoresizingMaskIntoConstraints = false
         return l
     }()
@@ -49,35 +57,39 @@ final class TrackerCell: UICollectionViewCell {
         return l
     }()
 
-    // Круглая кнопка: + / ✓
+    // Кнопка «плюс / галочка» — круглая 34×34
     private let actionButton: UIButton = {
         let b = UIButton(type: .system)
         b.translatesAutoresizingMaskIntoConstraints = false
         b.layer.cornerRadius = 17
         b.layer.masksToBounds = true
         b.layer.borderWidth = 2
-        b.layer.borderColor = UIColor.systemBackground.cgColor
-        b.tintColor = .white
-        b.backgroundColor = UIColor.white.withAlphaComponent(0.25)
+        // borderColor выставим в configure, чтобы совпадал с цветом трекера
+        b.tintColor = UIColor.systemGreen
         return b
     }()
 
+    // состояние на выбранную дату
     private var isDoneToday = false
+    private var accentColor: UIColor = .systemGreen // цвет трекера
 
     override init(frame: CGRect) {
         super.init(frame: frame)
         setupUI()
     }
-
     required init?(coder: NSCoder) {
         super.init(coder: coder)
         setupUI()
     }
 
     private func setupUI() {
+        contentView.backgroundColor = .clear
+
         contentView.addSubview(cardView)
-        cardView.addSubview(emojiLabel)
+        cardView.addSubview(emojiBadge)
+        emojiBadge.addSubview(emojiLabel)
         cardView.addSubview(titleLabel)
+
         contentView.addSubview(daysLabel)
         contentView.addSubview(actionButton)
 
@@ -87,15 +99,20 @@ final class TrackerCell: UICollectionViewCell {
             cardView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
             cardView.heightAnchor.constraint(equalToConstant: 90),
 
-            emojiLabel.topAnchor.constraint(equalTo: cardView.topAnchor, constant: 8),
-            emojiLabel.leadingAnchor.constraint(equalTo: cardView.leadingAnchor, constant: 8),
+            emojiBadge.topAnchor.constraint(equalTo: cardView.topAnchor, constant: 8),
+            emojiBadge.leadingAnchor.constraint(equalTo: cardView.leadingAnchor, constant: 8),
+            emojiBadge.widthAnchor.constraint(equalToConstant: 24),
+            emojiBadge.heightAnchor.constraint(equalToConstant: 24),
 
-            titleLabel.leadingAnchor.constraint(equalTo: emojiLabel.trailingAnchor, constant: 8),
+            emojiLabel.centerXAnchor.constraint(equalTo: emojiBadge.centerXAnchor),
+            emojiLabel.centerYAnchor.constraint(equalTo: emojiBadge.centerYAnchor),
+
+            titleLabel.leadingAnchor.constraint(equalTo: emojiBadge.trailingAnchor, constant: 8),
             titleLabel.trailingAnchor.constraint(equalTo: cardView.trailingAnchor, constant: -12),
-            titleLabel.centerYAnchor.constraint(equalTo: emojiLabel.centerYAnchor),
+            titleLabel.centerYAnchor.constraint(equalTo: emojiBadge.centerYAnchor),
 
             daysLabel.topAnchor.constraint(equalTo: cardView.bottomAnchor, constant: 6),
-            daysLabel.leadingAnchor.constraint(equalTo: cardView.leadingAnchor, constant: 16),
+            daysLabel.leadingAnchor.constraint(equalTo: cardView.leadingAnchor),
 
             actionButton.trailingAnchor.constraint(equalTo: cardView.trailingAnchor, constant: -12),
             actionButton.bottomAnchor.constraint(equalTo: cardView.bottomAnchor, constant: -12),
@@ -104,13 +121,9 @@ final class TrackerCell: UICollectionViewCell {
         ])
 
         actionButton.addTarget(self, action: #selector(toggleTapped), for: .touchUpInside)
-
-        // фон карточки
-        contentView.backgroundColor = .clear
-        backgroundColor = .clear
     }
 
-    // Основная конфигурация
+    // MARK: - Public configure
     func configure(name: String,
                    emoji: String,
                    color: UIColor,
@@ -121,27 +134,40 @@ final class TrackerCell: UICollectionViewCell {
         emojiLabel.text = emoji
         daysLabel.text = daysText
         cardView.backgroundColor = color
+        accentColor = color
 
         self.isDoneToday = isDoneToday
         actionButton.isEnabled = canToggle
+
+        // Состояние кнопки по макету
         updateButtonAppearance()
     }
 
     private func updateButtonAppearance() {
-        let symbol = isDoneToday ? "checkmark" : "plus"
-        actionButton.setImage(UIImage(systemName: symbol), for: .normal)
+        if isDoneToday {
+            // заполненный кружок цветом трекера, белая галочка
+            actionButton.backgroundColor = accentColor
+            actionButton.layer.borderColor = UIColor.systemBackground.cgColor
+            actionButton.setImage(UIImage(systemName: "checkmark"), for: .normal)
+            actionButton.tintColor = .white
+        } else {
+            // белый фон, зелёная (цвет трекера) обводка и плюс
+            actionButton.backgroundColor = .white
+            actionButton.layer.borderColor = accentColor.cgColor
+            actionButton.setImage(UIImage(systemName: "plus"), for: .normal)
+            actionButton.tintColor = accentColor
+        }
         actionButton.alpha = actionButton.isEnabled ? 1.0 : 0.4
     }
 
     @objc private func toggleTapped() {
-        // Визуально переворачиваем; модель обновит VC через делегат
+        // визуальный отклик сразу
         isDoneToday.toggle()
         updateButtonAppearance()
         delegate?.trackerCellDidToggle(self)
     }
 }
 
-// MARK: - HEX цвет
 extension UIColor {
     static func fromHex(_ hex: String) -> UIColor {
         var s = hex.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
