@@ -199,28 +199,43 @@ final class CreateHabitViewController: UIViewController {
     }
 }
 
+// MARK:
 final class RowView: UIView {
     let title = UILabel()
     let subtitle = UILabel()
     private let chevron = UIImageView(image: UIImage(systemName: "chevron.right"))
+    private let textStack = UIStackView()
 
     init(title text: String) {
         super.init(frame: .zero)
         backgroundColor = .clear
+
         title.text = text
         title.font = .systemFont(ofSize: 16)
+        title.textColor = .label
+
         subtitle.font = .systemFont(ofSize: 13)
         subtitle.textColor = .secondaryLabel
+        subtitle.numberOfLines = 1
+
         chevron.tintColor = .tertiaryLabel
 
-        [title, subtitle, chevron].forEach { $0.translatesAutoresizingMaskIntoConstraints = false; addSubview($0) }
+        textStack.axis = .vertical
+        textStack.alignment = .leading
+        textStack.spacing = 2
+        textStack.translatesAutoresizingMaskIntoConstraints = false
+        textStack.addArrangedSubview(title)
+        textStack.addArrangedSubview(subtitle)
+
+        [textStack, chevron].forEach {
+            $0.translatesAutoresizingMaskIntoConstraints = false
+            addSubview($0)
+        }
 
         NSLayoutConstraint.activate([
-            title.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 32),
-            title.centerYAnchor.constraint(equalTo: centerYAnchor, constant: -10),
-
-            subtitle.leadingAnchor.constraint(equalTo: title.leadingAnchor),
-            subtitle.topAnchor.constraint(equalTo: title.bottomAnchor, constant: 2),
+            textStack.centerYAnchor.constraint(equalTo: centerYAnchor),        
+            textStack.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 32),
+            textStack.trailingAnchor.constraint(lessThanOrEqualTo: chevron.leadingAnchor, constant: -12),
 
             chevron.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -28),
             chevron.centerYAnchor.constraint(equalTo: centerYAnchor)

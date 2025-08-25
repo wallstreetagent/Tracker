@@ -15,7 +15,8 @@ final class TrackerCell: UICollectionViewCell {
     static let reuseIdentifier = "TrackerCell"
     weak var delegate: TrackerCellDelegate?
 
-    // Цвет карточки задаём извне (цвет трекера)
+    // MARK: UI
+
     private let cardView: UIView = {
         let v = UIView()
         v.layer.cornerRadius = 16
@@ -24,159 +25,161 @@ final class TrackerCell: UICollectionViewCell {
         return v
     }()
 
-    // Маленькая «плашка» под эмодзи как в макете
-    private let emojiBadge: UIView = {
-        let v = UIView()
-        v.backgroundColor = UIColor.white.withAlphaComponent(0.3)
-        v.layer.cornerRadius = 12
-        v.translatesAutoresizingMaskIntoConstraints = false
-        return v
-    }()
-
-    private let emojiLabel: UILabel = {
+    private let emojiBadge: UILabel = {
         let l = UILabel()
-        l.font = .systemFont(ofSize: 20)
+        l.textAlignment = .center
+        l.font = .systemFont(ofSize: 17)
+    
+        l.backgroundColor = UIColor.white.withAlphaComponent(0.30)
+        l.layer.cornerRadius = 14
+        l.layer.masksToBounds = true
         l.translatesAutoresizingMaskIntoConstraints = false
         return l
     }()
 
-    private let titleLabel: UILabel = {
+    private let nameLabel: UILabel = {
         let l = UILabel()
-        l.font = .systemFont(ofSize: 16, weight: .semibold)
-        l.textColor = .white
         l.numberOfLines = 2
+        l.textColor = .white
+        l.font = .systemFont(ofSize: 17, weight: .semibold)
         l.translatesAutoresizingMaskIntoConstraints = false
         return l
     }()
 
     private let daysLabel: UILabel = {
         let l = UILabel()
-        l.font = .systemFont(ofSize: 12)
         l.textColor = .secondaryLabel
+        l.font = .systemFont(ofSize: 12)
         l.translatesAutoresizingMaskIntoConstraints = false
         return l
     }()
 
-    // Кнопка «плюс / галочка» — круглая 34×34
-    private let actionButton: UIButton = {
+    private let toggleButton: UIButton = {
         let b = UIButton(type: .system)
         b.translatesAutoresizingMaskIntoConstraints = false
         b.layer.cornerRadius = 17
-        b.layer.masksToBounds = true
         b.layer.borderWidth = 2
-        // borderColor выставим в configure, чтобы совпадал с цветом трекера
-        b.tintColor = UIColor.systemGreen
+        b.layer.masksToBounds = true
+        NSLayoutConstraint.activate([
+            b.widthAnchor.constraint(equalToConstant: 34),
+            b.heightAnchor.constraint(equalToConstant: 34)
+        ])
         return b
     }()
 
-    // состояние на выбранную дату
+    // MARK: State
+
     private var isDoneToday = false
-    private var accentColor: UIColor = .systemGreen // цвет трекера
+    private var canToggle = true
+    private var accentColor: UIColor = UIColor(red: 0x33/255, green: 0xCF/255, blue: 0x69/255, alpha: 1)
+
+    // MARK: Init
 
     override init(frame: CGRect) {
         super.init(frame: frame)
-        setupUI()
-    }
-    required init?(coder: NSCoder) {
-        super.init(coder: coder)
-        setupUI()
-    }
-
-    private func setupUI() {
         contentView.backgroundColor = .clear
+
+        
+        layer.shadowColor = UIColor.black.cgColor
+        layer.shadowOpacity = 0.06
+        layer.shadowRadius = 6
+        layer.shadowOffset = CGSize(width: 0, height: 2)
 
         contentView.addSubview(cardView)
         cardView.addSubview(emojiBadge)
-        emojiBadge.addSubview(emojiLabel)
-        cardView.addSubview(titleLabel)
-
+        cardView.addSubview(nameLabel)
         contentView.addSubview(daysLabel)
-        contentView.addSubview(actionButton)
+        contentView.addSubview(toggleButton)
+
+        toggleButton.addTarget(self, action: #selector(didTapToggle), for: .touchUpInside)
 
         NSLayoutConstraint.activate([
+         
+            cardView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
+            cardView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
             cardView.topAnchor.constraint(equalTo: contentView.topAnchor),
-            cardView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
-            cardView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
-            cardView.heightAnchor.constraint(equalToConstant: 90),
+            cardView.heightAnchor.constraint(equalToConstant: 100),
 
-            emojiBadge.topAnchor.constraint(equalTo: cardView.topAnchor, constant: 8),
-            emojiBadge.leadingAnchor.constraint(equalTo: cardView.leadingAnchor, constant: 8),
-            emojiBadge.widthAnchor.constraint(equalToConstant: 24),
-            emojiBadge.heightAnchor.constraint(equalToConstant: 24),
+        
+            emojiBadge.leadingAnchor.constraint(equalTo: cardView.leadingAnchor, constant: 16),
+            emojiBadge.topAnchor.constraint(equalTo: cardView.topAnchor, constant: 16),
+            emojiBadge.widthAnchor.constraint(equalToConstant: 28),
+            emojiBadge.heightAnchor.constraint(equalToConstant: 28),
 
-            emojiLabel.centerXAnchor.constraint(equalTo: emojiBadge.centerXAnchor),
-            emojiLabel.centerYAnchor.constraint(equalTo: emojiBadge.centerYAnchor),
+            nameLabel.leadingAnchor.constraint(equalTo: cardView.leadingAnchor, constant: 16),
+            nameLabel.trailingAnchor.constraint(equalTo: cardView.trailingAnchor, constant: -16),
+            nameLabel.bottomAnchor.constraint(equalTo: cardView.bottomAnchor, constant: -16),
 
-            titleLabel.leadingAnchor.constraint(equalTo: emojiBadge.trailingAnchor, constant: 8),
-            titleLabel.trailingAnchor.constraint(equalTo: cardView.trailingAnchor, constant: -12),
-            titleLabel.centerYAnchor.constraint(equalTo: emojiBadge.centerYAnchor),
+       
+            daysLabel.leadingAnchor.constraint(equalTo: cardView.leadingAnchor, constant: 16),
+            daysLabel.topAnchor.constraint(equalTo: cardView.bottomAnchor, constant: 8),
+            daysLabel.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -8),
 
-            daysLabel.topAnchor.constraint(equalTo: cardView.bottomAnchor, constant: 6),
-            daysLabel.leadingAnchor.constraint(equalTo: cardView.leadingAnchor),
-
-            actionButton.trailingAnchor.constraint(equalTo: cardView.trailingAnchor, constant: -12),
-            actionButton.bottomAnchor.constraint(equalTo: cardView.bottomAnchor, constant: -12),
-            actionButton.widthAnchor.constraint(equalToConstant: 34),
-            actionButton.heightAnchor.constraint(equalToConstant: 34)
+            toggleButton.centerYAnchor.constraint(equalTo: daysLabel.centerYAnchor),
+            toggleButton.trailingAnchor.constraint(equalTo: cardView.trailingAnchor, constant: -16)
         ])
-
-        actionButton.addTarget(self, action: #selector(toggleTapped), for: .touchUpInside)
     }
 
-    // MARK: - Public configure
+    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+
+    override func prepareForReuse() {
+        super.prepareForReuse()
+        nameLabel.text = nil
+        emojiBadge.text = nil
+        daysLabel.text = nil
+        isDoneToday = false
+        canToggle = true
+        accentColor = UIColor(red: 0x33/255, green: 0xCF/255, blue: 0x69/255, alpha: 1)
+        updateToggleStyle()
+    }
+
+    // MARK: Public API
+
     func configure(name: String,
                    emoji: String,
                    color: UIColor,
                    daysText: String,
                    isDoneToday: Bool,
                    canToggle: Bool) {
-        titleLabel.text = name
-        emojiLabel.text = emoji
+        nameLabel.text = name
+        emojiBadge.text = emoji
         daysLabel.text = daysText
         cardView.backgroundColor = color
         accentColor = color
-
         self.isDoneToday = isDoneToday
-        actionButton.isEnabled = canToggle
-
-        // Состояние кнопки по макету
-        updateButtonAppearance()
+        self.canToggle = canToggle
+        updateToggleStyle()
     }
 
-    private func updateButtonAppearance() {
-        if isDoneToday {
-            // заполненный кружок цветом трекера, белая галочка
-            actionButton.backgroundColor = accentColor
-            actionButton.layer.borderColor = UIColor.systemBackground.cgColor
-            actionButton.setImage(UIImage(systemName: "checkmark"), for: .normal)
-            actionButton.tintColor = .white
-        } else {
-            // белый фон, зелёная (цвет трекера) обводка и плюс
-            actionButton.backgroundColor = .white
-            actionButton.layer.borderColor = accentColor.cgColor
-            actionButton.setImage(UIImage(systemName: "plus"), for: .normal)
-            actionButton.tintColor = accentColor
-        }
-        actionButton.alpha = actionButton.isEnabled ? 1.0 : 0.4
+    func setDoneToday(_ done: Bool) {
+        isDoneToday = done
+        updateToggleStyle()
     }
 
-    @objc private func toggleTapped() {
-        // визуальный отклик сразу
-        isDoneToday.toggle()
-        updateButtonAppearance()
+    // MARK: Actions & styling
+
+    @objc private func didTapToggle() {
+        guard canToggle else { return }
         delegate?.trackerCellDidToggle(self)
     }
-}
 
-extension UIColor {
-    static func fromHex(_ hex: String) -> UIColor {
-        var s = hex.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
-        if s.hasPrefix("#") { s.removeFirst() }
-        var v: UInt64 = 0; Scanner(string: s).scanHexInt64(&v)
-        guard s.count == 6 else { return .secondarySystemBackground }
-        let r = CGFloat((v & 0xFF0000) >> 16) / 255
-        let g = CGFloat((v & 0x00FF00) >> 8) / 255
-        let b = CGFloat(v & 0x0000FF) / 255
-        return UIColor(red: r, green: g, blue: b, alpha: 1)
+    private func updateToggleStyle() {
+        toggleButton.layer.cornerRadius = 17
+        toggleButton.layer.masksToBounds = true
+        toggleButton.layer.borderWidth = 0
+        
+        if isDoneToday {
+        
+            toggleButton.backgroundColor = accentColor.withAlphaComponent(0.5)
+            toggleButton.setImage(UIImage(systemName: "checkmark"), for: .normal)
+        } else {
+   
+            toggleButton.backgroundColor = accentColor
+            toggleButton.setImage(UIImage(systemName: "plus"), for: .normal)
+        }
+        toggleButton.tintColor = .white
+        
+        toggleButton.isEnabled = canToggle
+        toggleButton.alpha = canToggle ? 1.0 : 0.4
     }
 }

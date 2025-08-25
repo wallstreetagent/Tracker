@@ -15,7 +15,7 @@ final class TabBarController: UITabBarController {
         let trackersNC = UINavigationController(rootViewController: TrackersViewController())
         trackersNC.tabBarItem = UITabBarItem(
             title: "Трекеры",
-            image: UIImage(named: "tab_trackers_selected"), // твоя иконка
+            image: UIImage(named: "tab_trackers_selected"),
             tag: 0
         )
 
@@ -23,7 +23,7 @@ final class TabBarController: UITabBarController {
         let statsNC = UINavigationController(rootViewController: StatisticsViewController())
         statsNC.tabBarItem = UITabBarItem(
             title: "Статистика",
-            image: UIImage(named: "tab_statistics"), // твоя иконка
+            image: UIImage(named: "tab_statistics"), 
             tag: 1
         )
 
