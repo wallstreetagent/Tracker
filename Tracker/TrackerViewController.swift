@@ -88,11 +88,25 @@ final class TrackersViewController: UIViewController {
     // MARK: - Lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
+        
+        let addButton = UIBarButtonItem(
+            image: UIImage(systemName: "plus"),
+            style: .plain,
+            target: self,
+            action: #selector(didTapPlus)
+        )
+        addButton.tintColor = UIColor(hex: "#1A1B22")
+        navigationItem.leftBarButtonItem = addButton
+        navigationController?.navigationBar.tintColor = UIColor(hex: "#1A1B22")
+
+
         view.backgroundColor = .systemBackground
 
         navigationItem.leftBarButtonItem = UIBarButtonItem(
             barButtonSystemItem: .add, target: self, action: #selector(didTapPlus)
         )
+       
+
         navigationItem.rightBarButtonItem = UIBarButtonItem(customView: navDatePicker)
 
         [titleLabel, searchBar, collectionView, placeholderImage, placeholderLabel].forEach { view.addSubview($0) }
