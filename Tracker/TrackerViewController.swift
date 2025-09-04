@@ -44,8 +44,8 @@ final class TrackersViewController: UIViewController {
     private let placeholderLabel: UILabel = {
         let l = UILabel()
         l.text = "Что будем отслеживать?"
-        l.textColor = .systemGray
-        l.font = .systemFont(ofSize: 16)
+        l.textColor = UIColor(hex: "#1A1B22")
+        l.font = UIFont(name: "SFProText-Medium", size: 12)
         l.translatesAutoresizingMaskIntoConstraints = false
         return l
     }()
@@ -112,12 +112,12 @@ final class TrackersViewController: UIViewController {
             collectionView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
 
             placeholderImage.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            placeholderImage.centerYAnchor.constraint(equalTo: view.centerYAnchor, constant: -20),
-            placeholderImage.widthAnchor.constraint(equalToConstant: 80),
-            placeholderImage.heightAnchor.constraint(equalToConstant: 80),
+                placeholderImage.centerYAnchor.constraint(equalTo: view.centerYAnchor, constant: -40),
+                placeholderImage.widthAnchor.constraint(equalToConstant: 80),
+                placeholderImage.heightAnchor.constraint(equalToConstant: 80),
 
-            placeholderLabel.topAnchor.constraint(equalTo: placeholderImage.bottomAnchor, constant: 8),
-            placeholderLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor)
+                placeholderLabel.topAnchor.constraint(equalTo: placeholderImage.bottomAnchor, constant: 8),
+                placeholderLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor)
         ])
 
         navDatePicker.date = Date()
