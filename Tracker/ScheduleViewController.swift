@@ -11,19 +11,21 @@ final class ScheduleViewController: UIViewController {
 
     var onDone: ((Set<Weekday>) -> Void)?
 
-    private var selected = Set<Weekday>(Weekday.everyday)
+
+    private var selected = Set<Weekday>()
     private let weekdaysOrder: [Weekday] = [.mon, .tue, .wed, .thu, .fri, .sat, .sun]
 
     private let titleLabel: UILabel = {
         let l = UILabel()
         l.text = "Расписание"
-        l.font = .systemFont(ofSize: 13, weight: .semibold)
+        l.font = .systemFont(ofSize: 16, weight: .semibold)
         l.textAlignment = .center
         l.translatesAutoresizingMaskIntoConstraints = false
         return l
     }()
 
     private let table = UITableView(frame: .zero, style: .insetGrouped)
+
     private let doneButton: UIButton = {
         let b = UIButton(type: .system)
         b.setTitle("Готово", for: .normal)
@@ -34,8 +36,9 @@ final class ScheduleViewController: UIViewController {
         return b
     }()
 
-    init(initialSelection: Set<Weekday> = Set<Weekday>(Weekday.everyday)) {
-        self.selected = initialSelection.isEmpty ? Set<Weekday>(Weekday.everyday) : initialSelection
+    // ← ВАЖНО: именно этот инициализатор и именно с меткой `initialSelection`
+    init(initialSelection: Set<Weekday> = []) {
+        self.selected = initialSelection
         super.init(nibName: nil, bundle: nil)
     }
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
@@ -86,8 +89,9 @@ extension ScheduleViewController: UITableViewDataSource, UITableViewDelegate {
         let day = weekdaysOrder[indexPath.row]
         let cell = UITableViewCell(style: .default, reuseIdentifier: nil)
         cell.selectionStyle = .none
-        cell.textLabel?.font = .systemFont(ofSize: 16, weight: .regular)
-        cell.textLabel?.text = ru(day)
+        cell.textLabel?.font = .systemFont(ofSize: 16)
+        cell.textLabel?.text = day.fullName
+
         let s = UISwitch()
         s.onTintColor = .systemBlue
         s.isOn = selected.contains(day)
@@ -100,17 +104,5 @@ extension ScheduleViewController: UITableViewDataSource, UITableViewDelegate {
     @objc private func sw(_ sender: UISwitch) {
         guard let d = Weekday(rawValue: sender.tag) else { return }
         if sender.isOn { selected.insert(d) } else { selected.remove(d) }
-    }
-
-    private func ru(_ d: Weekday) -> String {
-        switch d {
-        case .mon: return "Понедельник"
-        case .tue: return "Вторник"
-        case .wed: return "Среда"
-        case .thu: return "Четверг"
-        case .fri: return "Пятница"
-        case .sat: return "Суббота"
-        case .sun: return "Воскресенье"
-        }
     }
 }

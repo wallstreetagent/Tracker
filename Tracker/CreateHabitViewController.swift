@@ -94,56 +94,60 @@ final class CreateHabitViewController: UIViewController {
         super.viewDidLoad()
         view.backgroundColor = .systemBackground
         navigationItem.titleView = titleLabel
-
+        
         nameField.addTarget(self, action: #selector(textChanged), for: .editingChanged)
         cancelButton.addTarget(self, action: #selector(cancel), for: .touchUpInside)
         createButton.addTarget(self, action: #selector(create), for: .touchUpInside)
-
+        
         view.addSubview(nameContainer)
         nameContainer.addSubview(nameField)
         view.addSubview(rowsCard)
         [categoryRow, sep1, scheduleRow].forEach { rowsCard.addSubview($0) }
         view.addSubview(cancelButton)
         view.addSubview(createButton)
-
+        
         NSLayoutConstraint.activate([
-            nameContainer.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 24),
+  
+            nameContainer.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 20),
             nameContainer.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
             nameContainer.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
             nameContainer.heightAnchor.constraint(equalToConstant: 75),
-
+            
             nameField.leadingAnchor.constraint(equalTo: nameContainer.leadingAnchor, constant: 16),
             nameField.trailingAnchor.constraint(equalTo: nameContainer.trailingAnchor, constant: -16),
             nameField.centerYAnchor.constraint(equalTo: nameContainer.centerYAnchor),
-
-            rowsCard.topAnchor.constraint(equalTo: nameContainer.bottomAnchor, constant: 16),
+            
+            rowsCard.topAnchor.constraint(equalTo: nameContainer.bottomAnchor, constant: 32),
             rowsCard.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
             rowsCard.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
-
+            rowsCard.heightAnchor.constraint(equalToConstant: 150),
+            
             categoryRow.leadingAnchor.constraint(equalTo: rowsCard.leadingAnchor),
             categoryRow.trailingAnchor.constraint(equalTo: rowsCard.trailingAnchor),
             categoryRow.topAnchor.constraint(equalTo: rowsCard.topAnchor),
             categoryRow.heightAnchor.constraint(equalToConstant: 60),
-
+            
             sep1.leadingAnchor.constraint(equalTo: rowsCard.leadingAnchor, constant: 16),
             sep1.trailingAnchor.constraint(equalTo: rowsCard.trailingAnchor, constant: -16),
             sep1.topAnchor.constraint(equalTo: categoryRow.bottomAnchor),
             sep1.heightAnchor.constraint(equalToConstant: 0.5),
-
+            
             scheduleRow.leadingAnchor.constraint(equalTo: rowsCard.leadingAnchor),
             scheduleRow.trailingAnchor.constraint(equalTo: rowsCard.trailingAnchor),
             scheduleRow.topAnchor.constraint(equalTo: sep1.bottomAnchor),
             scheduleRow.heightAnchor.constraint(equalToConstant: 60),
-            scheduleRow.bottomAnchor.constraint(equalTo: rowsCard.bottomAnchor),
-
-            cancelButton.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
-            createButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
+            
+            cancelButton.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
+            cancelButton.heightAnchor.constraint(equalToConstant: 60),
             cancelButton.trailingAnchor.constraint(equalTo: createButton.leadingAnchor, constant: -8),
-            cancelButton.heightAnchor.constraint(equalToConstant: 56),
-            createButton.heightAnchor.constraint(equalToConstant: 56),
+            
+            createButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
+            createButton.heightAnchor.constraint(equalToConstant: 60),
+            createButton.widthAnchor.constraint(equalTo: cancelButton.widthAnchor),
+            
+            createButton.topAnchor.constraint(greaterThanOrEqualTo: rowsCard.bottomAnchor, constant: 24),
             cancelButton.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -16),
-            createButton.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -16),
-            cancelButton.widthAnchor.constraint(equalTo: createButton.widthAnchor)
+            createButton.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -16)
         ])
     }
 
@@ -157,13 +161,14 @@ final class CreateHabitViewController: UIViewController {
 
     @objc private func tapSchedule() {
         let vc = ScheduleViewController(initialSelection: selectedSchedule)
-        vc.onDone = { [weak self] set in
+        vc.onDone = { [weak self] (set: Set<Weekday>) in
             self?.selectedSchedule = set
             self?.scheduleRow.subtitle.text = set.isEmpty ? "" : self?.shortSchedule(set)
             self?.updateCreateState()
         }
         navigationController?.pushViewController(vc, animated: true)
     }
+
 
     @objc private func cancel() { dismiss(animated: true) }
 

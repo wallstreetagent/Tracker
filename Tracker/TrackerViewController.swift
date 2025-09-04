@@ -111,13 +111,17 @@ final class TrackersViewController: UIViewController {
 
         [titleLabel, searchBar, collectionView, placeholderImage, placeholderLabel].forEach { view.addSubview($0) }
         searchBar.delegate = self
+        searchBar.searchBarStyle = .minimal
+        searchBar.isTranslucent = true
+        searchBar.backgroundImage = UIImage()
+        searchBar.setBackgroundImage(UIImage(), for: .any, barMetrics: .default)
 
         NSLayoutConstraint.activate([
             titleLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
             titleLabel.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 8),
 
-            searchBar.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
-            searchBar.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
+            searchBar.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 12),
+            searchBar.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -12),
             searchBar.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 10),
 
             collectionView.leadingAnchor.constraint(equalTo: view.leadingAnchor),

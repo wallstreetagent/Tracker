@@ -45,3 +45,31 @@ public extension Weekday {
     static var weekend: Set<Weekday> { [.sat, .sun] }
     static var everyday: Set<Weekday> { Set(Weekday.allCases) }
 }
+
+public extension Weekday {
+    /// Полное название для UI ("Понедельник")
+    var fullName: String {
+        switch self {
+        case .mon: return "Понедельник"
+        case .tue: return "Вторник"
+        case .wed: return "Среда"
+        case .thu: return "Четверг"
+        case .fri: return "Пятница"
+        case .sat: return "Суббота"
+        case .sun: return "Воскресенье"
+        }
+    }
+
+    /// Короткое название ("Пн", "Вт" и т.д.)
+    var shortName: String {
+        switch self {
+        case .mon: return "Пн"
+        case .tue: return "Вт"
+        case .wed: return "Ср"
+        case .thu: return "Чт"
+        case .fri: return "Пт"
+        case .sat: return "Сб"
+        case .sun: return "Вс"
+        }
+    }
+}
