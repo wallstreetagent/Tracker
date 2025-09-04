@@ -3,13 +3,11 @@
 //  Tracker
 //
 //  Created by Yanye Velikanova on 8/20/25.
-//
-
 import UIKit
 
-public extension UIColor {
-    convenience init?(hex: String) {
-        var hexString = hex.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
+ public extension UIColor {
+   convenience init?(hex: String) {
+       var hexString = hex.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
         if hexString.hasPrefix("#") { hexString.removeFirst() }
         guard hexString.count == 6, let rgb = UInt32(hexString, radix: 16) else { return nil }
         let r = CGFloat((rgb & 0xFF0000) >> 16) / 255.0
