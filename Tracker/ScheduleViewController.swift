@@ -34,7 +34,11 @@ final class ScheduleViewController: UIViewController {
         t.clipsToBounds = true
         t.backgroundColor = .clear
         t.separatorStyle = .singleLine
-        t.separatorColor = .separator
+        t.separatorColor = UIColor(red: 0xAE/255.0,
+                                       green: 0xAF/255.0,
+                                       blue: 0xB4/255.0,
+                                       alpha: 1.0)
+
         return t
     }()
 
