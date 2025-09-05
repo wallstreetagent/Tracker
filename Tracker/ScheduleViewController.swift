@@ -11,7 +11,7 @@ final class ScheduleViewController: UIViewController {
 
     var onDone: ((Set<Weekday>) -> Void)?
 
-    // выбранные дни (по умолчанию пусто — все свитчи OFF)
+   
     private var selected = Set<Weekday>()
     private let weekdaysOrder: [Weekday] = [.mon, .tue, .wed, .thu, .fri, .sat, .sun]
 
@@ -19,7 +19,7 @@ final class ScheduleViewController: UIViewController {
     private let titleLabel: UILabel = {
         let l = UILabel()
         l.text = "Расписание"
-        l.font = .systemFont(ofSize: 16)                 // как в «надо»
+        l.font = .systemFont(ofSize: 16)
         l.translatesAutoresizingMaskIntoConstraints = false
         return l
     }()
@@ -33,7 +33,8 @@ final class ScheduleViewController: UIViewController {
         t.isScrollEnabled = false
         t.clipsToBounds = true
         t.backgroundColor = .clear
-        t.separatorStyle = .none          
+        t.separatorStyle = .singleLine
+        t.separatorColor = .separator
         return t
     }()
 
@@ -42,14 +43,14 @@ final class ScheduleViewController: UIViewController {
         let b = UIButton(type: .system)
         b.setTitle("Готово", for: .normal)
         b.titleLabel?.font = .systemFont(ofSize: 16)
-        b.setTitleColor(.ypWhiteDay, for: .normal)       // как в «надо»
-        b.backgroundColor = .ypBlackDay                  // как в «надо»
+        b.setTitleColor(.ypWhiteDay, for: .normal)
+        b.backgroundColor = .ypBlackDay
         b.layer.cornerRadius = 16
         b.translatesAutoresizingMaskIntoConstraints = false
         return b
     }()
 
-    // твой инициализатор оставляем (как просила)
+   
     init(initialSelection: Set<Weekday> = []) {
         self.selected = initialSelection
         super.init(nibName: nil, bundle: nil)
@@ -59,27 +60,27 @@ final class ScheduleViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        // фон как в «надо»
+      
         view.backgroundColor = .ypWhiteDay
 
-        // НЕ кладём заголовок в navigationItem.titleView — он внутри view по констрейтам
+        
         table.dataSource = self
         table.delegate = self
 
         [titleLabel, table, doneButton].forEach { view.addSubview($0) }
 
         NSLayoutConstraint.activate([
-            // Заголовок по центру, сверху 20
+            
             titleLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
              titleLabel.topAnchor.constraint(equalTo: view.topAnchor, constant: 20),
 
-            // Таблица под заголовком: сверху 30; по бокам 16; фикс-высота 525 (7×75)
+           
             table.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 30),
             table.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 16),
             table.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -16),
             table.heightAnchor.constraint(equalToConstant: 525),
 
-            // Кнопка «Готово»: снизу 16, по бокам 20, высота 60
+            
             doneButton.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -16),
             doneButton.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 20),
             doneButton.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -20),
@@ -103,7 +104,7 @@ final class ScheduleViewController: UIViewController {
 
     @objc private func didTapDone() {
         onDone?(selected)
-        // у тебя экран открывается через push — закрываем pop (в «надо» было dismiss)
+       
         navigationController?.popViewController(animated: true)
     }
 }
@@ -120,13 +121,18 @@ extension ScheduleViewController: UITableViewDataSource, UITableViewDelegate {
         let cell = tableView.dequeueReusableCell(withIdentifier: "dayCell", for: indexPath)
         cell.selectionStyle = .none
 
-        // текст как в «надо»
+   
         var config = cell.defaultContentConfiguration()
-        config.text = day.fullName        // если есть .title — можно подставить его
+        config.text = day.fullName
         config.textProperties.font = .systemFont(ofSize: 17)
         cell.contentConfiguration = config
+        cell.backgroundColor = UIColor(red: 0xE6/255.0,
+                                       green: 0xE8/255.0,
+                                       blue: 0xEB/255.0,
+                                       alpha: 0.3)
 
-        // свитч как accessoryView (переиспользуем при реюзе)
+
+       
         let s: UISwitch
         if let existing = cell.accessoryView as? UISwitch {
             s = existing
@@ -139,8 +145,8 @@ extension ScheduleViewController: UITableViewDataSource, UITableViewDelegate {
         s.isOn = selected.contains(day)
         s.tag = day.rawValue
 
-        // фон ячейки и сепараторы как в «надо»
-        cell.backgroundColor = .ypBackground
+        
+      
         if indexPath.row == weekdaysOrder.count - 1 {
             cell.separatorInset = UIEdgeInsets(top: 0, left: tableView.bounds.width, bottom: 0, right: 0)
         } else {

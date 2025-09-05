@@ -27,7 +27,7 @@ final class CreateHabitViewController: UIViewController {
     private var selectedColorHex = "#34C759"
     private let nameLimit = 38
 
-    // MARK: - UI (как в референсе)
+    // MARK:
     private let scrollView: UIScrollView = {
         let v = UIScrollView()
         v.keyboardDismissMode = .interactive
@@ -58,7 +58,7 @@ final class CreateHabitViewController: UIViewController {
         let l = UILabel()
         l.text = "Ограничение 38 символов"
         l.font = .systemFont(ofSize: 17)
-        l.textColor = .systemRed            // аналог ypRed
+        l.textColor = .systemRed
         l.isHidden = true
         return l
     }()
@@ -77,7 +77,7 @@ final class CreateHabitViewController: UIViewController {
     private lazy var cancelButton: UIButton = {
         let b = UIButton(type: .system)
         b.setTitle("Отменить", for: .normal)
-        b.setTitleColor(.systemRed, for: .normal)     // аналог ypRed
+        b.setTitleColor(.systemRed, for: .normal)     
         b.titleLabel?.font = .systemFont(ofSize: 16)
         b.layer.cornerRadius = 16
         b.layer.borderWidth = 1
@@ -91,7 +91,7 @@ final class CreateHabitViewController: UIViewController {
         b.setTitle("Создать", for: .normal)
         b.titleLabel?.font = .systemFont(ofSize: 16)
         b.layer.cornerRadius = 16
-        b.backgroundColor = .systemGray3     // аналог ypGray
+        b.backgroundColor = .systemGray3
         b.isEnabled = false
         b.setTitleColor(.white, for: .normal)
         b.addTarget(self, action: #selector(create), for: .touchUpInside)
@@ -105,7 +105,7 @@ final class CreateHabitViewController: UIViewController {
         }
     }
 
-    // переключаем верхний якорь таблицы между nameTextField и limitLabel
+
     private var tableTopToLabel: NSLayoutConstraint?
     private var tableTopToTextField: NSLayoutConstraint?
 
@@ -127,7 +127,7 @@ final class CreateHabitViewController: UIViewController {
 
         view.backgroundColor = .ypWhiteDay
 
-        // Заголовок не в navigationItem.titleView — он в контенте, как в макете
+       
         nameTextField.delegate = self
 
         settingsTableView.delegate = self
@@ -178,26 +178,25 @@ final class CreateHabitViewController: UIViewController {
         tableTopToTextField?.isActive = true
 
         NSLayoutConstraint.activate([
-            // Заголовок
             titleLabel.centerXAnchor.constraint(equalTo: contentView.centerXAnchor),
             titleLabel.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 20),
 
-            // Поле ввода
+          
             nameTextField.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 38),
             nameTextField.heightAnchor.constraint(equalToConstant: 75),
             nameTextField.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
             nameTextField.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
 
-            // Лимит
+        
             limitLabel.topAnchor.constraint(equalTo: nameTextField.bottomAnchor, constant: 8),
             limitLabel.centerXAnchor.constraint(equalTo: contentView.centerXAnchor),
 
-            // Таблица настроек (категория/расписание)
+            
             settingsTableView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
             settingsTableView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
             settingsTableView.heightAnchor.constraint(equalToConstant: 150),
 
-            // Кнопки снизу
+            
             cancelButton.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 20),
             cancelButton.heightAnchor.constraint(equalToConstant: 60),
             cancelButton.trailingAnchor.constraint(equalTo: createButton.leadingAnchor, constant: -8),
@@ -236,7 +235,7 @@ final class CreateHabitViewController: UIViewController {
     // MARK: - Actions
     @objc private func nameEditingChanged() {
         let count = nameTextField.text?.count ?? 0
-        limitLabel.isHidden = count < nameLimit  // показать при >= 38
+        limitLabel.isHidden = count < nameLimit
         updateCreateButtonState()
         updateLimitLayout()
     }
@@ -285,10 +284,10 @@ extension CreateHabitViewController: UITableViewDelegate {
 
         switch SettingsRow(rawValue: indexPath.row) {
         case .category:
-            // экран категорий — позже
+           
             break
         case .schedule:
-            // у тебя в проекте сейчас инициализатор с initialSelection
+            
             let vc = ScheduleViewController(initialSelection: selectedSchedule)
             vc.onDone = { [weak self] set in
                 guard let self else { return }
@@ -328,7 +327,7 @@ extension CreateHabitViewController: UITableViewDataSource {
         cell.accessoryType = .disclosureIndicator
         cell.backgroundColor = .ypBackground
 
-        // убираем нижний разделитель у последней
+      
         if indexPath.row == SettingsRow.allCases.count - 1 {
             cell.separatorInset = UIEdgeInsets(top: 0, left: tableView.bounds.width, bottom: 0, right: 0)
         } else {
