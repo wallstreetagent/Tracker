@@ -50,7 +50,7 @@ final class TrackerCell: UICollectionViewCell {
 
     private let daysLabel: UILabel = {
         let l = UILabel()
-        l.textColor = .fromHex("#1A1B22")
+        l.textColor = UIColor(hex: "#1A1B22") ?? .black
         l.font = .systemFont(ofSize: 12, weight: .medium)
         l.translatesAutoresizingMaskIntoConstraints = false
         return l

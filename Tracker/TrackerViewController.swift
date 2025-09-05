@@ -41,7 +41,7 @@ final class TrackersViewController: UIViewController {
         l.text = "Что будем отслеживать?"
         l.font = .systemFont(ofSize: 12)        // как в примере
         l.textAlignment = .center
-        l.textColor = .fromHex("#1A1B22") 
+        l.textColor = UIColor(hex: "#1A1B22") ?? .black
         l.translatesAutoresizingMaskIntoConstraints = false
         return l
     }()
@@ -270,7 +270,7 @@ extension TrackersViewController: UICollectionViewDataSource, UICollectionViewDe
 
         cell.configure(name: tracker.name,
                        emoji: tracker.emoji,
-                       color: .fromHex(tracker.colorHex),
+                       color: UIColor(hex: tracker.colorHex) ?? .systemGreen,
                        daysText: daysText(days),
                        isDoneToday: doneToday,
                        canToggle: canToggle)
