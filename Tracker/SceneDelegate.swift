@@ -16,7 +16,13 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         guard let windowScene = (scene as? UIWindowScene) else { return }
 
         let window = UIWindow(windowScene: windowScene)
-        window.rootViewController = TabBarController()
+
+        // DI: берём общий стек из AppDelegate
+        let appDelegate = UIApplication.shared.delegate as! AppDelegate
+        let coreDataStack = appDelegate.coreDataStack
+
+        // Передаём зависимость в таббар
+        window.rootViewController = TabBarController(coreDataStack: coreDataStack)
         self.window = window
         window.makeKeyAndVisible()
     }

@@ -8,25 +8,31 @@
 import UIKit
 
 final class TabBarController: UITabBarController {
+    private let coreDataStack: CoreDataStack
+
+    init(coreDataStack: CoreDataStack) {
+        self.coreDataStack = coreDataStack
+        super.init(nibName: nil, bundle: nil)
+    }
+    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+
     override func viewDidLoad() {
         super.viewDidLoad()
 
         let appearance = UITabBarAppearance()
-                appearance.configureWithOpaqueBackground()
-                appearance.backgroundColor = .systemBackground
-
+        appearance.configureWithOpaqueBackground()
+        appearance.backgroundColor = .systemBackground
         appearance.shadowColor = UIColor.separator
+        tabBar.standardAppearance = appearance
+        tabBar.scrollEdgeAppearance = appearance
 
-                tabBar.standardAppearance = appearance
-                tabBar.scrollEdgeAppearance = appearance
-        
-        let trackersNC = UINavigationController(rootViewController: TrackersViewController())
+        let trackersVC = TrackersViewController(coreDataStack: coreDataStack)
+        let trackersNC = UINavigationController(rootViewController: trackersVC)
         trackersNC.tabBarItem = UITabBarItem(
             title: "Трекеры",
             image: UIImage(named: "tab_trackers_selected"),
             tag: 0
         )
-
 
         let statsNC = UINavigationController(rootViewController: StatisticsViewController())
         statsNC.tabBarItem = UITabBarItem(
