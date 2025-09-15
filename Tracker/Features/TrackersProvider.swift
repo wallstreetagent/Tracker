@@ -7,7 +7,9 @@
 
 import Foundation
 
-protocol TrackersProvider {
+protocol TrackersProvider: AnyObject {
+    var onChange: (() -> Void)? { get set }
+
     func snapshot(for date: Date, query: String?) throws -> [TrackerCategory]
     func createTracker(_ tracker: Tracker, in categoryTitle: String) throws
     func toggleRecord(trackerId: UUID, on date: Date) throws

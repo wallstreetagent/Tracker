@@ -10,17 +10,28 @@ import Foundation
 final class TrackersProviderCoreData: TrackersProvider {
     private let trackerStore: TrackerStoring
     private let recordStore: TrackerRecordStoring
+    private let categoryStore: TrackerCategoryStoring
+
+    var onChange: (() -> Void)?
 
     init(stack: CoreDataStack) {
         let catStore = TrackerCategoryStore(stack: stack)
-        self.trackerStore = TrackerStore(stack: stack, categoryStore: catStore)
-        self.recordStore = TrackerRecordStore(stack: stack)
+        let trStore = TrackerStore(stack: stack, categoryStore: catStore)
+        let recStore = TrackerRecordStore(stack: stack)
+
+        self.categoryStore = catStore
+        self.trackerStore = trStore
+        self.recordStore = recStore
+
+        // Любые изменения в Core Data (категории/трекеры/записи) → один колбэк наружу
+        trStore.onChange = { [weak self] in self?.onChange?() }
+        catStore.onChange = { [weak self] in self?.onChange?() }
+        recStore.onChange = { [weak self] in self?.onChange?() }
     }
 
     func snapshot(for date: Date, query: String?) throws -> [TrackerCategory] {
         let items = try trackerStore.snapshot()
 
-        // Фильтрация по дню и поиску
         let calWeekday = Calendar.current.component(.weekday, from: date)
         let weekday = Weekday.fromCalendar(calWeekday)
         let q = (query ?? "").trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
@@ -28,12 +39,11 @@ final class TrackersProviderCoreData: TrackersProvider {
         let filtered = items.filter { pair in
             let t = pair.tracker
             let mask = WeekdayMask.make(from: t.schedule)
-            let byDay = mask == 0 || t.schedule.contains(weekday) // mask==0 → нерегулярный
+            let byDay = mask == 0 || t.schedule.contains(weekday) // нерегулярные трекеры проходят всегда
             let byText = q.isEmpty || t.name.lowercased().contains(q)
             return byDay && byText
         }
 
-        // Группировка по названию категории
         let grouped = Dictionary(grouping: filtered, by: { $0.categoryTitle })
         return grouped.keys.sorted().map { title in
             let trackers = grouped[title]!.map { $0.tracker }

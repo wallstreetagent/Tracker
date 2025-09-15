@@ -86,6 +86,9 @@ final class TrackersViewController: UIViewController {
         navDatePicker.date = Date()
         currentDate = Calendar.current.startOfDay(for: navDatePicker.date)
         reloadSnapshot()
+        provider.onChange = { [weak self] in
+            DispatchQueue.main.async { self?.reloadSnapshot() }
+        }
     }
 
     private func configureNavBar() {

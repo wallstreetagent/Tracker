@@ -7,17 +7,42 @@
 
 import CoreData
 
-protocol TrackerRecordStoring {
+protocol TrackerRecordStoring: AnyObject {
+    var onChange: (() -> Void)? { get set }
     func toggle(trackerId: UUID, on date: Date) throws
     func totalDays(for trackerId: UUID) throws -> Int
     func isDone(trackerId: UUID, on date: Date) throws -> Bool
 }
 
-final class TrackerRecordStore: TrackerRecordStoring {
+final class TrackerRecordStore: NSObject, TrackerRecordStoring {
     private let stack: CoreDataStack
-    init(stack: CoreDataStack) { self.stack = stack }
+    var onChange: (() -> Void)?
 
     private func day(_ date: Date) -> Date { Calendar.current.startOfDay(for: date) }
+
+    // FRC слушает viewContext, чтобы UI получал апдейты после бэкграунд-сейвов
+    private lazy var frc: NSFetchedResultsController<TrackerRecordCoreData> = {
+        let req: NSFetchRequest<TrackerRecordCoreData> = TrackerRecordCoreData.fetchRequest()
+        req.sortDescriptors = [
+            NSSortDescriptor(key: "date", ascending: true),
+            NSSortDescriptor(key: "tracker.id", ascending: true)
+        ]
+        let c = NSFetchedResultsController(
+            fetchRequest: req,
+            managedObjectContext: stack.viewContext,
+            sectionNameKeyPath: nil,
+            cacheName: nil
+        )
+        c.delegate = self
+        try? c.performFetch()
+        return c
+    }()
+
+    init(stack: CoreDataStack) {
+        self.stack = stack
+        super.init()
+        _ = frc
+    }
 
     func toggle(trackerId: UUID, on date: Date) throws {
         let d = day(date)
@@ -39,11 +64,12 @@ final class TrackerRecordStore: TrackerRecordStoring {
                 rec.date = d
                 rec.tracker = tracker
             }
+            if ctx.hasChanges { try ctx.save() } // изменения прилетят в viewContext, FRC сообщит
         }
     }
 
     func totalDays(for trackerId: UUID) throws -> Int {
-        let req: NSFetchRequest<NSNumber> = NSFetchRequest(entityName: "TrackerRecordCoreData")
+        let req = NSFetchRequest<NSNumber>(entityName: "TrackerRecordCoreData")
         req.predicate = NSPredicate(format: "tracker.id == %@", trackerId as CVarArg)
         req.resultType = .countResultType
         let res = try stack.viewContext.fetch(req)
@@ -58,3 +84,10 @@ final class TrackerRecordStore: TrackerRecordStoring {
         return try stack.viewContext.fetch(req).first != nil
     }
 }
+
+extension TrackerRecordStore: NSFetchedResultsControllerDelegate {
+    func controllerDidChangeContent(_ controller: NSFetchedResultsController<NSFetchRequestResult>) {
+        onChange?()
+    }
+}
+
