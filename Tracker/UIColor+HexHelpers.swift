@@ -19,7 +19,7 @@ public extension UIColor {
         self.init(red: r, green: g, blue: b, alpha: 1.0)
     }
 
-    // ===== Палитра под макет =====
+  
     static var ypWhiteDay: UIColor { .white }
     static var ypBlackDay: UIColor { UIColor(hex: "#1A1B22") ?? .black }
     static var ypBlue: UIColor { .systemBlue }

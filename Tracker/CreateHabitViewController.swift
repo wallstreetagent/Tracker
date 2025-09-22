@@ -9,17 +9,28 @@
 import UIKit
 
 protocol CreateHabitDelegate: AnyObject {
-    func createHabitDidFinish(name: String,
-                              schedule: Set<Weekday>,
-                              colorHex: String,
-                              emoji: String,
-                              categoryTitle: String)
+    func createHabitDidFinish(
+        name: String,
+        schedule: Set<Weekday>,
+        colorHex: String,
+        emoji: String,
+        categoryTitle: String
+    )
 }
 
 final class CreateHabitViewController: UIViewController {
 
     // MARK: - External
     weak var delegate: CreateHabitDelegate?
+
+    // MARK: - Deps
+    private let coreDataStack: CoreDataStack
+
+    init(coreDataStack: CoreDataStack) {
+        self.coreDataStack = coreDataStack
+        super.init(nibName: nil, bundle: nil)
+    }
+    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
     // MARK: - State
     private var selectedSchedule = Set<Weekday>()
@@ -174,7 +185,6 @@ final class CreateHabitViewController: UIViewController {
         settingsTableView.dataSource = self
         settingsTableView.backgroundColor = .clear
 
-        // Регистрация коллекций
         emojiCollection.register(EmojiCell.self, forCellWithReuseIdentifier: EmojiCell.reuseId)
         emojiCollection.dataSource = self
         emojiCollection.delegate = self
@@ -193,6 +203,17 @@ final class CreateHabitViewController: UIViewController {
         layoutUI()
     }
 
+    // MARK: - Categories
+    @objc private func openCategories() {
+        let vm = TrackerCategoryViewModel(
+            categoryStore: TrackerCategoryStore(stack: coreDataStack),
+            selectedTitle: selectedCategoryTitle
+        )
+        let vc = TrackerCategoryViewController(viewModel: vm)
+        vc.delegate = self
+        navigationController?.pushViewController(vc, animated: true)
+    }
+
     // MARK: - Layout
     private func layoutUI() {
         scrollView.translatesAutoresizingMaskIntoConstraints = false
@@ -201,7 +222,6 @@ final class CreateHabitViewController: UIViewController {
         scrollView.addSubview(contentView)
 
         NSLayoutConstraint.activate([
-            scrollView.topAnchor.constraint(equalTo: view.topAnchor),
             scrollView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
             scrollView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
             scrollView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor),
@@ -312,11 +332,13 @@ final class CreateHabitViewController: UIViewController {
               let name = nameTextField.text?.trimmingCharacters(in: .whitespacesAndNewlines),
               !name.isEmpty, name.count <= nameLimit else { return }
 
-        delegate?.createHabitDidFinish(name: name,
-                                       schedule: selectedSchedule,
-                                       colorHex: selectedColorHex,
-                                       emoji: selectedEmoji,
-                                       categoryTitle: selectedCategoryTitle)
+        delegate?.createHabitDidFinish(
+            name: name,
+            schedule: selectedSchedule,
+            colorHex: selectedColorHex,
+            emoji: selectedEmoji,
+            categoryTitle: selectedCategoryTitle
+        )
         dismiss(animated: true)
     }
 
@@ -349,8 +371,7 @@ extension CreateHabitViewController: UITableViewDelegate {
 
         switch SettingsRow(rawValue: indexPath.row) {
         case .category:
-            // Экран категорий добавим в следующем спринте
-            break
+            openCategories()
 
         case .schedule:
             let vc = ScheduleViewController(initialSelection: selectedSchedule)
@@ -382,6 +403,12 @@ extension CreateHabitViewController: UITableViewDataSource {
         var config = cell.defaultContentConfiguration()
         config.text = row?.title
         config.textProperties.font = .systemFont(ofSize: 17)
+
+        if row == .category {
+            config.secondaryText = selectedCategoryTitle
+            config.secondaryTextProperties.color = .systemGray3
+            config.secondaryTextProperties.font = .systemFont(ofSize: 17)
+        }
 
         if row == .schedule, !selectedSchedule.isEmpty {
             config.secondaryText = scheduleSummary(selectedSchedule)
@@ -469,7 +496,17 @@ extension CreateHabitViewController: UITextFieldDelegate {
     }
 }
 
-// MARK: - Support types / views
+// MARK: - Category delegate
+extension CreateHabitViewController: TrackerCategoryViewControllerDelegate {
+    func categoryViewController(_ vc: TrackerCategoryViewController, didPick title: String) {
+        selectedCategoryTitle = title
+        let idx = IndexPath(row: SettingsRow.category.rawValue, section: 0)
+        settingsTableView.reloadRows(at: [idx], with: .none)
+        updateCreateButtonState()
+    }
+}
+
+// MARK: - Support views & types
 
 final class CustomTextField: UITextField {
     var clearPadding: CGFloat = 12
@@ -521,7 +558,7 @@ private final class EmojiCell: UICollectionViewCell {
 
     func configure(emoji: String, selected: Bool) {
         label.text = emoji
-        contentView.backgroundColor = selected ? UIColor(white: 0.92, alpha: 1.0) : .clear // серый фон
+        contentView.backgroundColor = selected ? UIColor(white: 0.92, alpha: 1.0) : .clear
     }
 }
 

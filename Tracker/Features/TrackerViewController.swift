@@ -9,6 +9,7 @@ import UIKit
 
 final class TrackersViewController: UIViewController {
 
+    // MARK: - Deps
     private let coreDataStack: CoreDataStack
     private let provider: TrackersProvider
 
@@ -19,11 +20,13 @@ final class TrackersViewController: UIViewController {
     }
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
+    // MARK: - State
     private var categories: [TrackerCategory] = []
     private var filteredCategories: [TrackerCategory] = []
     private var completedToday: Set<UUID> = []
     private var currentDate: Date = Calendar.current.startOfDay(for: Date())
 
+    // MARK: - UI
     private let searchField: UISearchTextField = {
         let f = UISearchTextField()
         f.placeholder = "Поиск"
@@ -31,6 +34,7 @@ final class TrackersViewController: UIViewController {
         f.backgroundColor = UIColor(white: 0.95, alpha: 1.0)
         f.layer.cornerRadius = 10
         f.layer.masksToBounds = true
+        f.translatesAutoresizingMaskIntoConstraints = false
         return f
     }()
 
@@ -60,9 +64,11 @@ final class TrackersViewController: UIViewController {
         cv.dataSource = self
         cv.delegate = self
         cv.register(TrackerCell.self, forCellWithReuseIdentifier: TrackerCell.reuseIdentifier)
-        cv.register(TrackerSectionHeader.self,
-                    forSupplementaryViewOfKind: UICollectionView.elementKindSectionHeader,
-                    withReuseIdentifier: TrackerSectionHeader.reuseIdentifier)
+        cv.register(
+            TrackerSectionHeader.self,
+            forSupplementaryViewOfKind: UICollectionView.elementKindSectionHeader,
+            withReuseIdentifier: TrackerSectionHeader.reuseIdentifier
+        )
         return cv
     }()
 
@@ -76,38 +82,48 @@ final class TrackersViewController: UIViewController {
         return dp
     }()
 
+    // MARK: - Lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
         configureNavBar()
         layoutUI()
+
+        view.backgroundColor = .ypWhiteDay
+
         searchField.delegate = self
         searchField.addTarget(self, action: #selector(searchChanged), for: .editingChanged)
-        view.backgroundColor = .ypWhiteDay
+
         navDatePicker.date = Date()
         currentDate = Calendar.current.startOfDay(for: navDatePicker.date)
+
         reloadSnapshot()
+
         provider.onChange = { [weak self] in
             DispatchQueue.main.async { self?.reloadSnapshot() }
         }
     }
 
+    // MARK: - UI setup
     private func configureNavBar() {
         title = "Трекеры"
         navigationController?.navigationBar.prefersLargeTitles = true
-        let addButton = UIBarButtonItem(image: UIImage(systemName: "plus"),
-                                        style: .plain,
-                                        target: self,
-                                        action: #selector(didTapPlus))
+
+        let addButton = UIBarButtonItem(
+            image: UIImage(systemName: "plus"),
+            style: .plain,
+            target: self,
+            action: #selector(didTapPlus)
+        )
         addButton.tintColor = .ypBlackDay
         navigationItem.leftBarButtonItem = addButton
         navigationItem.rightBarButtonItem = UIBarButtonItem(customView: navDatePicker)
     }
 
     private func layoutUI() {
-        [searchField, placeholderImage, placeholderLabel, collectionView].forEach {
-            $0.translatesAutoresizingMaskIntoConstraints = false
-            view.addSubview($0)
-        }
+        view.addSubview(searchField)
+        view.addSubview(placeholderImage)
+        view.addSubview(placeholderLabel)
+        view.addSubview(collectionView)
 
         NSLayoutConstraint.activate([
             searchField.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 5),
@@ -128,11 +144,14 @@ final class TrackersViewController: UIViewController {
         ])
     }
 
+    // MARK: - Actions
     @objc private func didTapPlus() {
-        let vc = CreateHabitViewController()
+        // ВАЖНО: используем инициализатор с coreDataStack
+        let vc = CreateHabitViewController(coreDataStack: coreDataStack)
         vc.delegate = self
+
         let nav = UINavigationController(rootViewController: vc)
-        nav.modalPresentationStyle = .formSheet
+        nav.modalPresentationStyle = .pageSheet   // при желании можно .formSheet / .overFullScreen
         present(nav, animated: true)
     }
 
@@ -145,15 +164,20 @@ final class TrackersViewController: UIViewController {
         reloadSnapshot()
     }
 
+    // MARK: - Data
     private func reloadSnapshot() {
         let query = (searchField.text ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+
         categories = (try? provider.snapshot(for: currentDate, query: query)) ?? []
         filteredCategories = categories
+
         rebuildCompletedTodaySet()
+
         let isEmpty = filteredCategories.isEmpty || filteredCategories.allSatisfy { $0.trackers.isEmpty }
         placeholderImage.isHidden = !isEmpty
         placeholderLabel.isHidden = !isEmpty
         collectionView.isHidden = isEmpty
+
         collectionView.reloadData()
     }
 
@@ -181,6 +205,7 @@ final class TrackersViewController: UIViewController {
     }
 }
 
+// MARK: - CreateHabitDelegate
 extension TrackersViewController: CreateHabitDelegate {
     func createHabitDidFinish(name: String,
                               schedule: Set<Weekday>,
@@ -193,19 +218,19 @@ extension TrackersViewController: CreateHabitDelegate {
     }
 }
 
+// MARK: - Collection
 extension TrackersViewController: UICollectionViewDataSource, UICollectionViewDelegate, UICollectionViewDelegateFlowLayout, TrackerCellDelegate {
 
     func numberOfSections(in collectionView: UICollectionView) -> Int { filteredCategories.count }
 
-    func collectionView(_ collectionView: UICollectionView,
-                        numberOfItemsInSection section: Int) -> Int {
+    func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
         filteredCategories[section].trackers.count
     }
 
-    func collectionView(_ collectionView: UICollectionView,
-                        cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
+    func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         let cell = collectionView.dequeueReusableCell(
-            withReuseIdentifier: TrackerCell.reuseIdentifier, for: indexPath
+            withReuseIdentifier: TrackerCell.reuseIdentifier,
+            for: indexPath
         ) as! TrackerCell
 
         let tracker = filteredCategories[indexPath.section].trackers[indexPath.item]
@@ -213,12 +238,14 @@ extension TrackersViewController: UICollectionViewDataSource, UICollectionViewDe
         let doneToday = completedToday.contains(tracker.id)
         let canToggle = currentDate <= Calendar.current.startOfDay(for: Date())
 
-        cell.configure(name: tracker.name,
-                       emoji: tracker.emoji,
-                       color: UIColor(hex: tracker.colorHex) ?? .systemGreen,
-                       daysText: daysText(days),
-                       isDoneToday: doneToday,
-                       canToggle: canToggle)
+        cell.configure(
+            name: tracker.name,
+            emoji: tracker.emoji,
+            color: UIColor(hex: tracker.colorHex) ?? .systemGreen,
+            daysText: daysText(days),
+            isDoneToday: doneToday,
+            canToggle: canToggle
+        )
         cell.delegate = self
         return cell
     }
@@ -271,9 +298,14 @@ extension TrackersViewController: UICollectionViewDataSource, UICollectionViewDe
     }
 }
 
+
+
+// MARK: - Search delegate
 extension TrackersViewController: UITextFieldDelegate {
     func textFieldShouldReturn(_ textField: UITextField) -> Bool {
         textField.resignFirstResponder()
         return true
     }
 }
+
+

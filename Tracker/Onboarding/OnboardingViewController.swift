@@ -8,24 +8,25 @@
 import UIKit
 
 final class OnboardingViewController: UIViewController, UIPageViewControllerDataSource, UIPageViewControllerDelegate {
+
     private let pageVC = UIPageViewController(transitionStyle: .scroll, navigationOrientation: .horizontal)
-    private let pageControl = UIPageControl()
     private var pages: [OnboardingContentViewController] = []
     var onFinish: (() -> Void)?
 
     override func viewDidLoad() {
         super.viewDidLoad()
+        view.backgroundColor = .systemBackground
 
+       
         let p1 = OnboardingContentViewController(
             imageName: "onboarding1",
             title: "Отслеживайте только то, что хотите",
-            showButton: false
+            showsButton: true
         )
-
         let p2 = OnboardingContentViewController(
             imageName: "onboarding2",
             title: "Даже если это не литры воды и йога",
-            showButton: true
+            showsButton: true
         )
         p2.onStart = { [weak self] in self?.finish() }
 
@@ -33,11 +34,6 @@ final class OnboardingViewController: UIViewController, UIPageViewControllerData
 
         addChild(pageVC)
         view.addSubview(pageVC.view)
-        pageVC.didMove(toParent: self)
-        pageVC.dataSource = self
-        pageVC.delegate = self
-        pageVC.setViewControllers([pages[0]], direction: .forward, animated: false)
-
         pageVC.view.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
             pageVC.view.topAnchor.constraint(equalTo: view.topAnchor),
@@ -45,52 +41,26 @@ final class OnboardingViewController: UIViewController, UIPageViewControllerData
             pageVC.view.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             pageVC.view.bottomAnchor.constraint(equalTo: view.bottomAnchor)
         ])
+        pageVC.didMove(toParent: self)
+        pageVC.dataSource = self
+        pageVC.delegate = self
+        pageVC.setViewControllers([pages[0]], direction: .forward, animated: false)
 
-        pageControl.numberOfPages = pages.count
-        pageControl.currentPage = 0
-        pageControl.isUserInteractionEnabled = false
-        pageControl.translatesAutoresizingMaskIntoConstraints = false
-        view.addSubview(pageControl)
-
-        NSLayoutConstraint.activate([
-            pageControl.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            pageControl.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -96)
-        ])
+        for (i, p) in pages.enumerated() { p.configurePages(total: pages.count, index: i) }
     }
 
     private func finish() {
         UserDefaults.standard.set(true, forKey: "hasSeenOnboarding")
-        dismiss(animated: true) { [weak self] in self?.onFinish?() }
+        if presentingViewController != nil { dismiss(animated: true) } else { onFinish?() }
     }
 
-    // MARK: - UIPageViewControllerDataSource
-
+    // MARK: DataSource
     func pageViewController(_ pageViewController: UIPageViewController, viewControllerBefore viewController: UIViewController) -> UIViewController? {
-        guard
-            let vc = viewController as? OnboardingContentViewController,
-            let idx = pages.firstIndex(where: { $0 === vc }),
-            idx > 0
-        else { return nil }
+        guard let idx = pages.firstIndex(of: viewController as! OnboardingContentViewController), idx > 0 else { return nil }
         return pages[idx - 1]
     }
-
     func pageViewController(_ pageViewController: UIPageViewController, viewControllerAfter viewController: UIViewController) -> UIViewController? {
-        guard
-            let vc = viewController as? OnboardingContentViewController,
-            let idx = pages.firstIndex(where: { $0 === vc }),
-            idx < pages.count - 1
-        else { return nil }
+        guard let idx = pages.firstIndex(of: viewController as! OnboardingContentViewController), idx < pages.count - 1 else { return nil }
         return pages[idx + 1]
-    }
-
-    // MARK: - UIPageViewControllerDelegate
-
-    func pageViewController(_ pageViewController: UIPageViewController, didFinishAnimating finished: Bool, previousViewControllers: [UIViewController], transitionCompleted completed: Bool) {
-        guard
-            completed,
-            let current = pageVC.viewControllers?.first as? OnboardingContentViewController,
-            let idx = pages.firstIndex(where: { $0 === current })
-        else { return }
-        pageControl.currentPage = idx
     }
 }

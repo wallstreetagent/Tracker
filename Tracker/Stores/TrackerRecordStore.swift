@@ -20,7 +20,7 @@ final class TrackerRecordStore: NSObject, TrackerRecordStoring {
 
     private func day(_ date: Date) -> Date { Calendar.current.startOfDay(for: date) }
 
-    // FRC слушает viewContext, чтобы UI получал апдейты после бэкграунд-сейвов
+   
     private lazy var frc: NSFetchedResultsController<TrackerRecordCoreData> = {
         let req: NSFetchRequest<TrackerRecordCoreData> = TrackerRecordCoreData.fetchRequest()
         req.sortDescriptors = [
@@ -64,7 +64,7 @@ final class TrackerRecordStore: NSObject, TrackerRecordStoring {
                 rec.date = d
                 rec.tracker = tracker
             }
-            if ctx.hasChanges { try ctx.save() } // изменения прилетят в viewContext, FRC сообщит
+            if ctx.hasChanges { try ctx.save() } 
         }
     }
 

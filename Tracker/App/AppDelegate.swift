@@ -10,8 +10,8 @@ import UIKit
 @main
 class AppDelegate: UIResponder, UIApplicationDelegate {
 
-    // ⭐ ОДИН-ЕДИНСТВЕННЫЙ экземпляр на всё приложение
-    let coreDataStack = CoreDataStack(modelName: "TrackerModel") // замени имя, если .xcdatamodeld другое
+   
+    let coreDataStack = CoreDataStack(modelName: "TrackerModel") 
 
     func application(_ application: UIApplication,
                      didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {

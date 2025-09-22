@@ -23,7 +23,7 @@ final class TrackersProviderCoreData: TrackersProvider {
         self.trackerStore = trStore
         self.recordStore = recStore
 
-        // Любые изменения в Core Data (категории/трекеры/записи) → один колбэк наружу
+        
         trStore.onChange = { [weak self] in self?.onChange?() }
         catStore.onChange = { [weak self] in self?.onChange?() }
         recStore.onChange = { [weak self] in self?.onChange?() }
