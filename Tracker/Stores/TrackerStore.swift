@@ -78,3 +78,40 @@ extension TrackerStore: NSFetchedResultsControllerDelegate {
         onChange?()
     }
 }
+
+import CoreData
+
+extension TrackerStore {
+    func delete(id: UUID) throws {
+        try stack.performBackgroundTask { ctx in
+            let req: NSFetchRequest<TrackerCoreData> = TrackerCoreData.fetchRequest()
+            req.predicate = NSPredicate(format: "id == %@", id as CVarArg)
+            req.fetchLimit = 1
+            if let obj = try ctx.fetch(req).first {
+                let recReq: NSFetchRequest<TrackerRecordCoreData> = TrackerRecordCoreData.fetchRequest()
+                recReq.predicate = NSPredicate(format: "tracker == %@", obj)
+                for r in try ctx.fetch(recReq) { ctx.delete(r) }
+                ctx.delete(obj)
+                if ctx.hasChanges { try ctx.save() }
+            }
+        }
+    }
+
+    func togglePin(id: UUID, categoryStore: TrackerCategoryStoring) throws {
+        try stack.performBackgroundTask { ctx in
+            let req: NSFetchRequest<TrackerCoreData> = TrackerCoreData.fetchRequest()
+            req.predicate = NSPredicate(format: "id == %@", id as CVarArg)
+            req.fetchLimit = 1
+            guard let obj = try ctx.fetch(req).first else { return }
+
+            let pinned = try categoryStore.ensureCategory(title: "Закреплённые", in: ctx)
+            if obj.category?.title == "Закреплённые" {
+                let normal = try categoryStore.ensureCategory(title: "Без категории", in: ctx)
+                obj.category = normal
+            } else {
+                obj.category = pinned
+            }
+            if ctx.hasChanges { try ctx.save() }
+        }
+    }
+}

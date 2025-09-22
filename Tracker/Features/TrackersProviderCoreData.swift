@@ -67,3 +67,13 @@ final class TrackersProviderCoreData: TrackersProvider {
         try recordStore.isDone(trackerId: trackerId, on: date)
     }
 }
+
+extension TrackersProviderCoreData {
+    func deleteTracker(id: UUID) throws {
+        try (trackerStore as? TrackerStore)?.delete(id: id)
+    }
+
+    func togglePin(id: UUID) throws {
+        try (trackerStore as? TrackerStore)?.togglePin(id: id, categoryStore: categoryStore)
+    }
+}

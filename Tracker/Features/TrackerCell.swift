@@ -185,3 +185,18 @@ final class TrackerCell: UICollectionViewCell {
         toggleButton.alpha = canToggle ? 1.0 : 0.4
     }
 }
+
+extension TrackerCell {
+    func snapshotPreviewViewController() -> UIViewController {
+        let vc = UIViewController()
+        vc.view.backgroundColor = .clear
+        let snap = contentView.snapshotView(afterScreenUpdates: true) ?? UIView()
+        snap.translatesAutoresizingMaskIntoConstraints = false
+        vc.view.addSubview(snap)
+        NSLayoutConstraint.activate([
+            snap.centerXAnchor.constraint(equalTo: vc.view.centerXAnchor),
+            snap.centerYAnchor.constraint(equalTo: vc.view.centerYAnchor)
+        ])
+        return vc
+    }
+}

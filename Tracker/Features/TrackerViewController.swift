@@ -146,12 +146,10 @@ final class TrackersViewController: UIViewController {
 
     // MARK: - Actions
     @objc private func didTapPlus() {
-        // ВАЖНО: используем инициализатор с coreDataStack
         let vc = CreateHabitViewController(coreDataStack: coreDataStack)
         vc.delegate = self
-
         let nav = UINavigationController(rootViewController: vc)
-        nav.modalPresentationStyle = .pageSheet   // при желании можно .formSheet / .overFullScreen
+        nav.modalPresentationStyle = .formSheet
         present(nav, animated: true)
     }
 
@@ -308,4 +306,72 @@ extension TrackersViewController: UITextFieldDelegate {
     }
 }
 
+extension TrackersViewController {
+
+    private func tracker(at indexPath: IndexPath) -> Tracker {
+        filteredCategories[indexPath.section].trackers[indexPath.item]
+    }
+
+    private func presentEditor(for tracker: Tracker) {
+        let vc = CreateHabitViewController(coreDataStack: coreDataStack)
+        vc.delegate = self
+        let nav = UINavigationController(rootViewController: vc)
+        nav.modalPresentationStyle = .formSheet
+        present(nav, animated: true)
+    }
+
+    private func confirmDelete(tracker: Tracker, indexPath: IndexPath) {
+        let ac = UIAlertController(title: "Удалить трекер?",
+                                   message: "«\(tracker.name)» будет удалён.",
+                                   preferredStyle: .actionSheet)
+        ac.addAction(UIAlertAction(title: "Удалить", style: .destructive, handler: { [weak self] _ in
+            try? self?.provider.deleteTracker(id: tracker.id)
+            self?.reloadSnapshot()
+        }))
+        ac.addAction(UIAlertAction(title: "Отмена", style: .cancel))
+        if let pop = ac.popoverPresentationController,
+           let cell = collectionView.cellForItem(at: indexPath) {
+            pop.sourceView = cell
+            pop.sourceRect = cell.bounds
+        }
+        present(ac, animated: true)
+    }
+}
+
+extension TrackersViewController {
+
+    func collectionView(_ collectionView: UICollectionView,
+                        contextMenuConfigurationForItemAt indexPath: IndexPath,
+                        point: CGPoint) -> UIContextMenuConfiguration {
+        let t = tracker(at: indexPath)
+
+        return UIContextMenuConfiguration(identifier: indexPath as NSIndexPath,
+                                          previewProvider: { [weak self] in
+            guard
+                let self,
+                let cell = collectionView.cellForItem(at: indexPath) as? TrackerCell
+            else { return nil }
+            return cell.snapshotPreviewViewController()
+        }, actionProvider: { [weak self] _ in
+            guard let self else { return UIMenu() }
+
+            let pin = UIAction(title: "Закрепить", image: UIImage(systemName: "pin")) { _ in
+                try? self.provider.togglePin(id: t.id)
+                self.reloadSnapshot()
+            }
+
+            let edit = UIAction(title: "Редактировать", image: UIImage(systemName: "square.and.pencil")) { _ in
+                self.presentEditor(for: t)
+            }
+
+            let delete = UIAction(title: "Удалить",
+                                  image: UIImage(systemName: "trash"),
+                                  attributes: [.destructive]) { _ in
+                self.confirmDelete(tracker: t, indexPath: indexPath)
+            }
+
+            return UIMenu(children: [pin, edit, delete])
+        })
+    }
+}
 
