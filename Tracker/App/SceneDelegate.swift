@@ -15,11 +15,16 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
         guard let windowScene = (scene as? UIWindowScene) else { return }
 
+        // Один контейнер на всё приложение
+        let stack = CoreDataStack(modelName: "TrackerModel")
+        let provider = TrackersProviderCoreData(stack: stack)
+
         let window = UIWindow(windowScene: windowScene)
-        window.rootViewController = TabBarController()
+        window.rootViewController = TabBarController(coreDataStack: stack, trackersProvider: provider)
         self.window = window
         window.makeKeyAndVisible()
     }
+
 
     func sceneDidDisconnect(_ scene: UIScene) {
         // Called as the scene is being released by the system.

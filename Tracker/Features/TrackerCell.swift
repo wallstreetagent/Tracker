@@ -38,18 +38,20 @@ final class TrackerCell: UICollectionViewCell {
     }()
 
     private let nameLabel: UILabel = {
-        let l = UILabel()
-        l.numberOfLines = 2
-        l.textColor = .white
-        l.font = .systemFont(ofSize: 17, weight: .semibold)
-        l.translatesAutoresizingMaskIntoConstraints = false
-        return l
+        let label = UILabel()
+        label.font = .systemFont(ofSize: 12, weight: .medium)
+        label.textColor = .white
+        label.textAlignment = .left
+        label.numberOfLines = 1
+        label.translatesAutoresizingMaskIntoConstraints = false
+        return label
     }()
+
 
     private let daysLabel: UILabel = {
         let l = UILabel()
-        l.textColor = .secondaryLabel
-        l.font = .systemFont(ofSize: 12)
+        l.textColor = UIColor(hex: "#1A1B22") ?? .black
+        l.font = .systemFont(ofSize: 12, weight: .medium)
         l.translatesAutoresizingMaskIntoConstraints = false
         return l
     }()
@@ -98,7 +100,7 @@ final class TrackerCell: UICollectionViewCell {
             cardView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
             cardView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
             cardView.topAnchor.constraint(equalTo: contentView.topAnchor),
-            cardView.heightAnchor.constraint(equalToConstant: 100),
+            cardView.heightAnchor.constraint(equalToConstant: 90),
 
         
             emojiBadge.leadingAnchor.constraint(equalTo: cardView.leadingAnchor, constant: 16),
