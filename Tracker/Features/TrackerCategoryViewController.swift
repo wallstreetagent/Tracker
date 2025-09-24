@@ -195,21 +195,34 @@ extension TrackerCategoryViewController: UITableViewDataSource, UITableViewDeleg
     }
 
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cell = tableView.dequeueReusableCell(withIdentifier: TrackerCategoryCell.reuseId, for: indexPath) as! TrackerCategoryCell
+        let cell = tableView.dequeueReusableCell(withIdentifier: TrackerCategoryCell.reuseId,
+                                                 for: indexPath) as! TrackerCategoryCell
 
-        let item = vm.item(at: indexPath)
+        let title = vm.title(at: indexPath)
         let blue = UIColor(named: "ypBlue") ?? .systemBlue
-        cell.configure(with: item, selected: item.title == vm.selectedTitle, tint: blue)
+        cell.configure(title: title,
+                       selected: title == vm.selectedTitle,
+                       tint: blue)
 
-        // Сепараторы как в макете
-        if indexPath.row == vm.numberOfRows() - 1 {
-            cell.separatorInset = UIEdgeInsets(top: 0, left: tableView.bounds.width, bottom: 0, right: 0)
-        } else {
-            cell.separatorInset = UIEdgeInsets(top: 0, left: 16, bottom: 0, right: 16)
-        }
+      
+        let isFirst = indexPath.row == 0
+        let isLast  = indexPath.row == vm.numberOfRows() - 1
+        cell.contentView.backgroundColor = UIColor(red: 0xE6/255, green: 0xE8/255, blue: 0xEB/255, alpha: 0.3)
+        cell.contentView.layer.masksToBounds = true
+        cell.contentView.layer.cornerRadius = 16
+        var masked: CACornerMask = []
+        if isFirst { masked.formUnion([.layerMinXMinYCorner, .layerMaxXMinYCorner]) }
+        if isLast  { masked.formUnion([.layerMinXMaxYCorner, .layerMaxXMaxYCorner]) }
+        cell.contentView.layer.maskedCorners = masked
+
+       
+        cell.separatorInset = isLast
+            ? UIEdgeInsets(top: 0, left: tableView.bounds.width, bottom: 0, right: 0)
+            : UIEdgeInsets(top: 0, left: 16, bottom: 0, right: 16)
 
         return cell
     }
+
 
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
