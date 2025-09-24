@@ -339,39 +339,41 @@ extension TrackersViewController {
 }
 
 extension TrackersViewController {
-
+    
     func collectionView(_ collectionView: UICollectionView,
                         contextMenuConfigurationForItemAt indexPath: IndexPath,
                         point: CGPoint) -> UIContextMenuConfiguration {
+        
         let t = tracker(at: indexPath)
-
-        return UIContextMenuConfiguration(identifier: indexPath as NSIndexPath,
-                                          previewProvider: { [weak self] in
-            guard
-                let self,
-                let cell = collectionView.cellForItem(at: indexPath) as? TrackerCell
-            else { return nil }
-            return cell.snapshotPreviewViewController()
-        }, actionProvider: { [weak self] _ in
-            guard let self else { return UIMenu() }
-
-            let pin = UIAction(title: "Закрепить", image: UIImage(systemName: "pin")) { _ in
-                try? self.provider.togglePin(id: t.id)
-                self.reloadSnapshot()
+        let color = UIColor(hex: t.colorHex) ?? .systemOrange
+        
+        return UIContextMenuConfiguration(
+            identifier: indexPath as NSIndexPath,
+            previewProvider: {
+                TrackerContextPreviewViewController(
+                    emoji: t.emoji,
+                    text: t.name,
+                    color: color
+                )
+            },
+            actionProvider: { [weak self] _ in
+                guard let self else { return UIMenu() }
+                
+                let pin = UIAction(title: "Закрепить") { _ in
+                    try? self.provider.togglePin(id: t.id)
+                    self.reloadSnapshot()
+                }
+                
+                let edit = UIAction(title: "Редактировать") { _ in
+                    self.presentEditor(for: t)
+                }
+                
+                let delete = UIAction(title: "Удалить", attributes: [.destructive]) { _ in
+                    self.confirmDelete(tracker: t, indexPath: indexPath)
+                }
+                
+                return UIMenu(children: [pin, edit, delete])
             }
-
-            let edit = UIAction(title: "Редактировать", image: UIImage(systemName: "square.and.pencil")) { _ in
-                self.presentEditor(for: t)
-            }
-
-            let delete = UIAction(title: "Удалить",
-                                  image: UIImage(systemName: "trash"),
-                                  attributes: [.destructive]) { _ in
-                self.confirmDelete(tracker: t, indexPath: indexPath)
-            }
-
-            return UIMenu(children: [pin, edit, delete])
-        })
+        )
     }
 }
-
