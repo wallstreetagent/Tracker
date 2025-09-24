@@ -9,19 +9,19 @@ import UIKit
 
 final class OnboardingViewController: UIViewController, UIPageViewControllerDataSource, UIPageViewControllerDelegate {
 
+    var onFinish: (() -> Void)?
+
     private let pageVC = UIPageViewController(transitionStyle: .scroll, navigationOrientation: .horizontal)
     private var pages: [OnboardingContentViewController] = []
-    var onFinish: (() -> Void)?
 
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = .systemBackground
 
-       
         let p1 = OnboardingContentViewController(
             imageName: "onboarding1",
             title: "Отслеживайте только то, что хотите",
-            showsButton: true
+            showsButton: false
         )
         let p2 = OnboardingContentViewController(
             imageName: "onboarding2",
@@ -46,20 +46,24 @@ final class OnboardingViewController: UIViewController, UIPageViewControllerData
         pageVC.delegate = self
         pageVC.setViewControllers([pages[0]], direction: .forward, animated: false)
 
-        for (i, p) in pages.enumerated() { p.configurePages(total: pages.count, index: i) }
+        for (i, p) in pages.enumerated() {
+            p.configurePages(total: pages.count, index: i)
+        }
     }
 
     private func finish() {
-        UserDefaults.standard.set(true, forKey: "hasSeenOnboarding")
+        OnboardingFlag.isSeen = true
         if presentingViewController != nil { dismiss(animated: true) } else { onFinish?() }
     }
 
     // MARK: DataSource
-    func pageViewController(_ pageViewController: UIPageViewController, viewControllerBefore viewController: UIViewController) -> UIViewController? {
+    func pageViewController(_ pageViewController: UIPageViewController,
+                            viewControllerBefore viewController: UIViewController) -> UIViewController? {
         guard let idx = pages.firstIndex(of: viewController as! OnboardingContentViewController), idx > 0 else { return nil }
         return pages[idx - 1]
     }
-    func pageViewController(_ pageViewController: UIPageViewController, viewControllerAfter viewController: UIViewController) -> UIViewController? {
+    func pageViewController(_ pageViewController: UIPageViewController,
+                            viewControllerAfter viewController: UIViewController) -> UIViewController? {
         guard let idx = pages.firstIndex(of: viewController as! OnboardingContentViewController), idx < pages.count - 1 else { return nil }
         return pages[idx + 1]
     }

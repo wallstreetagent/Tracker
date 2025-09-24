@@ -8,9 +8,16 @@
 import UIKit
 
 final class TrackerContextPreviewViewController: UIViewController {
+    static let targetSize = CGSize(width: 260, height: 72)
+
     private let emoji: String
     private let text: String
     private let color: UIColor
+
+    private let container = UIView()
+    private let stack = UIStackView()
+    private let emojiLabel = UILabel()
+    private let textLabel = UILabel()
 
     init(emoji: String, text: String, color: UIColor) {
         self.emoji = emoji
@@ -19,11 +26,6 @@ final class TrackerContextPreviewViewController: UIViewController {
         super.init(nibName: nil, bundle: nil)
     }
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
-
-    private let container = UIView()
-    private let stack = UIStackView()
-    private let emojiLabel = UILabel()
-    private let textLabel = UILabel()
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -60,15 +62,24 @@ final class TrackerContextPreviewViewController: UIViewController {
             container.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             container.topAnchor.constraint(equalTo: view.topAnchor),
             container.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+
             stack.leadingAnchor.constraint(equalTo: container.leadingAnchor),
             stack.trailingAnchor.constraint(equalTo: container.trailingAnchor),
             stack.topAnchor.constraint(equalTo: container.topAnchor),
-            stack.bottomAnchor.constraint(equalTo: container.bottomAnchor)
+            stack.bottomAnchor.constraint(equalTo: container.bottomAnchor),
+
+            // фиксируем размер превью
+            view.widthAnchor.constraint(equalToConstant: Self.targetSize.width),
+            view.heightAnchor.constraint(equalToConstant: Self.targetSize.height)
         ])
+
+        preferredContentSize = Self.targetSize
     }
 
-    override var preferredContentSize: CGSize {
-        get { CGSize(width: 240, height: 64) }
-        set { super.preferredContentSize = newValue }
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        if preferredContentSize != Self.targetSize {
+            preferredContentSize = Self.targetSize
+        }
     }
 }

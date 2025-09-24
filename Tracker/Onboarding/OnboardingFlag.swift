@@ -8,7 +8,7 @@
 import Foundation
 
 enum OnboardingFlag {
-    private static let key = "hasSeenOnboarding_v1"
+    private static let key = "hasSeenOnboarding"
 
     static var isSeen: Bool {
         get { UserDefaults.standard.bool(forKey: key) }

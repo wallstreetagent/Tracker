@@ -208,12 +208,14 @@ final class CreateHabitViewController: UIViewController {
     @objc private func openCategories() {
         let vm = TrackerCategoryViewModel(
             categoryStore: TrackerCategoryStore(stack: coreDataStack),
-            selectedTitle: selectedCategoryTitle
+            counter: TrackerStoreCountingCoreData(stack: coreDataStack),
+            selectedTitle: selectedCategoryTitle   // твоя текуще выбранная категория (может быть nil)
         )
         let vc = TrackerCategoryViewController(viewModel: vm)
         vc.delegate = self
         navigationController?.pushViewController(vc, animated: true)
     }
+
 
     // MARK: - Layout
     private func layoutUI() {

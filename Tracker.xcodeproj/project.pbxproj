@@ -34,7 +34,6 @@
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				App/Info.plist,
-				Onboarding/Untitled.swift,
 			);
 			target = 60B210F02E53D37A00D10165 /* Tracker */;
 		};

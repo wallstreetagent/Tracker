@@ -27,7 +27,7 @@ final class TrackerCategoryViewController: UIViewController {
     private let table: UITableView = {
         let t = UITableView(frame: .zero, style: .plain)
         t.translatesAutoresizingMaskIntoConstraints = false
-        t.register(UITableViewCell.self, forCellReuseIdentifier: "CategoryCell")
+        t.register(TrackerCategoryCell.self, forCellReuseIdentifier: TrackerCategoryCell.reuseId)
         t.rowHeight = 75
         t.layer.cornerRadius = 16
         t.clipsToBounds = true
@@ -195,36 +195,21 @@ extension TrackerCategoryViewController: UITableViewDataSource, UITableViewDeleg
     }
 
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cell = tableView.dequeueReusableCell(withIdentifier: "CategoryCell", for: indexPath)
-        cell.selectionStyle = .none
+        let cell = tableView.dequeueReusableCell(withIdentifier: TrackerCategoryCell.reuseId, for: indexPath) as! TrackerCategoryCell
 
-        let title = vm.title(at: indexPath)
-
-        var config = cell.defaultContentConfiguration()
-        config.text = title
-        config.textProperties.font = .systemFont(ofSize: 17)
-        cell.contentConfiguration = config
-
-        if #available(iOS 14.0, *) {
-            var bg = UIBackgroundConfiguration.listPlainCell()
-            bg.backgroundColor = scheduleCellBackground   // #E6E8EB with 30%
-            cell.backgroundConfiguration = bg
-        } else {
-            cell.backgroundColor = scheduleCellBackground
-        }
-
+        let item = vm.item(at: indexPath)
         let blue = UIColor(named: "ypBlue") ?? .systemBlue
-        cell.tintColor = blue
-        cell.accessoryType = (title == vm.selectedTitle) ? .checkmark : .none
+        cell.configure(with: item, selected: item.title == vm.selectedTitle, tint: blue)
 
+        // Сепараторы как в макете
         if indexPath.row == vm.numberOfRows() - 1 {
             cell.separatorInset = UIEdgeInsets(top: 0, left: tableView.bounds.width, bottom: 0, right: 0)
         } else {
             cell.separatorInset = UIEdgeInsets(top: 0, left: 16, bottom: 0, right: 16)
         }
+
         return cell
     }
-
 
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
