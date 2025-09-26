@@ -16,45 +16,69 @@ final class TrackersProviderCoreData: TrackersProvider {
 
     init(stack: CoreDataStack) {
         let catStore = TrackerCategoryStore(stack: stack)
-        let trStore = TrackerStore(stack: stack, categoryStore: catStore)
+        let trStore  = TrackerStore(stack: stack, categoryStore: catStore)
         let recStore = TrackerRecordStore(stack: stack)
 
         self.categoryStore = catStore
-        self.trackerStore = trStore
-        self.recordStore = recStore
+        self.trackerStore  = trStore
+        self.recordStore   = recStore
 
-        
-        trStore.onChange = { [weak self] in self?.onChange?() }
+        trStore.onChange  = { [weak self] in self?.onChange?() }
         catStore.onChange = { [weak self] in self?.onChange?() }
         recStore.onChange = { [weak self] in self?.onChange?() }
     }
 
+    // MARK: - Queries
     func snapshot(for date: Date, query: String?) throws -> [TrackerCategory] {
         let items = try trackerStore.snapshot()
 
         let calWeekday = Calendar.current.component(.weekday, from: date)
-        let weekday = Weekday.fromCalendar(calWeekday)
+        let weekday    = Weekday.fromCalendar(calWeekday)
         let q = (query ?? "").trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
 
         let filtered = items.filter { pair in
             let t = pair.tracker
             let mask = WeekdayMask.make(from: t.schedule)
-            let byDay = mask == 0 || t.schedule.contains(weekday) // нерегулярные трекеры проходят всегда
+            let byDay  = mask == 0 || t.schedule.contains(weekday) // нерегулярные проходят всегда
             let byText = q.isEmpty || t.name.lowercased().contains(q)
             return byDay && byText
         }
 
         let grouped = Dictionary(grouping: filtered, by: { $0.categoryTitle })
         return grouped.keys.sorted().map { title in
-            let trackers = grouped[title]!.map { $0.tracker }
+            let trackers = grouped[title]!.map(\.tracker)
             return TrackerCategory(title: title, trackers: trackers)
         }
     }
 
+    // MARK: - Create / Update / Delete
     func createTracker(_ tracker: Tracker, in categoryTitle: String) throws {
         try trackerStore.create(tracker, categoryTitle: categoryTitle)
     }
 
+    func updateTracker(id: UUID,
+                       name: String,
+                       schedule: Set<Weekday>,
+                       colorHex: String,
+                       emoji: String,
+                       categoryTitle: String) throws {
+        try trackerStore.update(id: id,
+                                name: name,
+                                schedule: schedule,
+                                colorHex: colorHex,
+                                emoji: emoji,
+                                categoryTitle: categoryTitle)
+    }
+
+    func deleteTracker(id: UUID) throws {
+        try trackerStore.delete(id: id)
+    }
+
+    func togglePin(id: UUID) throws {
+        try trackerStore.togglePin(id: id, categoryStore: categoryStore)
+    }
+
+    // MARK: - Records
     func toggleRecord(trackerId: UUID, on date: Date) throws {
         try recordStore.toggle(trackerId: trackerId, on: date)
     }
@@ -65,15 +89,5 @@ final class TrackersProviderCoreData: TrackersProvider {
 
     func isDone(trackerId: UUID, on date: Date) throws -> Bool {
         try recordStore.isDone(trackerId: trackerId, on: date)
-    }
-}
-
-extension TrackersProviderCoreData {
-    func deleteTracker(id: UUID) throws {
-        try (trackerStore as? TrackerStore)?.delete(id: id)
-    }
-
-    func togglePin(id: UUID) throws {
-        try (trackerStore as? TrackerStore)?.togglePin(id: id, categoryStore: categoryStore)
     }
 }

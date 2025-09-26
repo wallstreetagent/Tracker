@@ -8,27 +8,54 @@
 
 import UIKit
 
+// MARK: - Delegate
+
 protocol CreateHabitDelegate: AnyObject {
-    func createHabitDidFinish(
-        name: String,
-        schedule: Set<Weekday>,
-        colorHex: String,
-        emoji: String,
-        categoryTitle: String
-    )
+    func createHabitDidFinish(name: String,
+                              schedule: Set<Weekday>,
+                              colorHex: String,
+                              emoji: String,
+                              categoryTitle: String)
+
+    /// Вызывается при сохранении изменений существующего трекера
+    func editHabitDidFinish(id: UUID,
+                            name: String,
+                            schedule: Set<Weekday>,
+                            colorHex: String,
+                            emoji: String,
+                            categoryTitle: String)
 }
+
+
+// extension CreateHabitDelegate {
+//    func editHabitDidFinish(id: UUID,
+//                            name: String,
+//                            schedule: Set<Weekday>,
+ //                           colorHex: String,
+//                            emoji: String,
+//                            categoryTitle: String) {}
+//}
+
+// MARK: - VC
 
 final class CreateHabitViewController: UIViewController {
 
-    
-    // MARK: - External
+    // External
     weak var delegate: CreateHabitDelegate?
 
-    // MARK: - Deps
+    // Deps
     private let coreDataStack: CoreDataStack
+    private let mode: TrackerType
 
-    init(coreDataStack: CoreDataStack) {
+    /// Если редактируем — здесь исходный трекер и его категория
+    private var editingContext: (tracker: Tracker, categoryTitle: String)?
+
+    init(coreDataStack: CoreDataStack,
+         mode: TrackerType = .habit,
+         editing: (tracker: Tracker, categoryTitle: String)? = nil) {
         self.coreDataStack = coreDataStack
+        self.mode = mode
+        self.editingContext = editing
         super.init(nibName: nil, bundle: nil)
     }
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
@@ -47,8 +74,8 @@ final class CreateHabitViewController: UIViewController {
         "#FECACA","#FFD6B3","#A7F3D0","#818CF8","#FF6B57","#FFAFD1",
         "#F9D999","#A7B5FF","#A855F7","#C084FC","#22C55E"
     ]
-    private var selectedEmojiIndex: IndexPath = IndexPath(item: 0, section: 0)
-    private var selectedColorIndex: IndexPath = IndexPath(item: 5, section: 0) // соответствует #34C759
+    private var selectedEmojiIndex = IndexPath(item: 0, section: 0)
+    private var selectedColorIndex = IndexPath(item: 5, section: 0) // #34C759
 
     // MARK: - UI (emoji/color)
     private let emojiTitle: UILabel = {
@@ -165,6 +192,7 @@ final class CreateHabitViewController: UIViewController {
     private var tableTopToTextField: NSLayoutConstraint?
 
     // MARK: - Lifecycle
+
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         navigationController?.setNavigationBarHidden(true, animated: false)
@@ -177,6 +205,8 @@ final class CreateHabitViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
+
+        // Общий сетап
         scrollView.contentInsetAdjustmentBehavior = .never
         view.backgroundColor = .ypWhiteDay
 
@@ -202,22 +232,41 @@ final class CreateHabitViewController: UIViewController {
         )
 
         layoutUI()
+
+        // Режим: редактирование/создание
+        if let ctx = editingContext {
+            title = "Редактировать трекер"
+            nameTextField.text     = ctx.tracker.name
+            selectedEmoji          = ctx.tracker.emoji
+            selectedColorHex       = ctx.tracker.colorHex
+            selectedSchedule       = ctx.tracker.schedule
+            selectedCategoryTitle  = ctx.categoryTitle
+            createButton.setTitle("Сохранить", for: .normal)
+        } else {
+            title = (mode == .habit) ? "Новая привычка" : "Новое нерегулярное событие"
+        }
+
+        settingsTableView.reloadData()
+        emojiCollection.reloadData()
+        colorCollection.reloadData()
+        updateCreateButtonState()
     }
 
     // MARK: - Categories
+
     @objc private func openCategories() {
         let vm = TrackerCategoryViewModel(
             categoryStore: TrackerCategoryStore(stack: coreDataStack),
             counter: TrackerStoreCountingCoreData(stack: coreDataStack),
-            selectedTitle: selectedCategoryTitle   // твоя текуще выбранная категория (может быть nil)
+            selectedTitle: selectedCategoryTitle
         )
         let vc = TrackerCategoryViewController(viewModel: vm)
         vc.delegate = self
         navigationController?.pushViewController(vc, animated: true)
     }
 
-
     // MARK: - Layout
+
     private func layoutUI() {
         scrollView.translatesAutoresizingMaskIntoConstraints = false
         contentView.translatesAutoresizingMaskIntoConstraints = false
@@ -300,6 +349,7 @@ final class CreateHabitViewController: UIViewController {
     }
 
     // MARK: - Helpers
+
     private func scheduleSummary(_ set: Set<Weekday>) -> String {
         if set.count == 7 { return "Каждый день" }
         let order: [Weekday] = [.mon, .tue, .wed, .thu, .fri, .sat, .sun]
@@ -309,7 +359,7 @@ final class CreateHabitViewController: UIViewController {
 
     private func updateCreateButtonState() {
         let hasName = !(nameTextField.text?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ?? true)
-        let hasDays = !selectedSchedule.isEmpty
+        let hasDays = (mode == .habit) ? !selectedSchedule.isEmpty : true // для события расписание не требуется
         isCreateButtonEnabled = hasName && hasDays
     }
 
@@ -321,6 +371,7 @@ final class CreateHabitViewController: UIViewController {
     }
 
     // MARK: - Actions
+
     @objc private func nameEditingChanged() {
         let count = nameTextField.text?.count ?? 0
         limitLabel.isHidden = count < nameLimit
@@ -330,18 +381,35 @@ final class CreateHabitViewController: UIViewController {
 
     @objc private func cancel() { dismiss(animated: true) }
 
+    /// Создать новый или сохранить изменения существующего
     @objc private func create() {
         guard isCreateButtonEnabled,
               let name = nameTextField.text?.trimmingCharacters(in: .whitespacesAndNewlines),
               !name.isEmpty, name.count <= nameLimit else { return }
 
-        delegate?.createHabitDidFinish(
-            name: name,
-            schedule: selectedSchedule,
-            colorHex: selectedColorHex,
-            emoji: selectedEmoji,
-            categoryTitle: selectedCategoryTitle
-        )
+        let category = selectedCategoryTitle
+        let colorHex = selectedColorHex
+        let emoji = selectedEmoji
+
+        // для событий можно хранить пустой сет; при необходимости подставь allCases
+        let scheduleToSave: Set<Weekday> = (mode == .habit) ? selectedSchedule : Set<Weekday>()
+
+        if let ctx = editingContext {
+            // РЕДАКТИРОВАНИЕ
+            delegate?.editHabitDidFinish(id: ctx.tracker.id,
+                                         name: name,
+                                         schedule: scheduleToSave,
+                                         colorHex: colorHex,
+                                         emoji: emoji,
+                                         categoryTitle: category)
+        } else {
+            // СОЗДАНИЕ
+            delegate?.createHabitDidFinish(name: name,
+                                           schedule: scheduleToSave,
+                                           colorHex: colorHex,
+                                           emoji: emoji,
+                                           categoryTitle: category)
+        }
         dismiss(animated: true)
     }
 
@@ -368,6 +436,7 @@ final class CreateHabitViewController: UIViewController {
 }
 
 // MARK: - UITableViewDelegate
+
 extension CreateHabitViewController: UITableViewDelegate {
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
@@ -394,9 +463,11 @@ extension CreateHabitViewController: UITableViewDelegate {
 }
 
 // MARK: - UITableViewDataSource
+
 extension CreateHabitViewController: UITableViewDataSource {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        SettingsRow.allCases.count
+        // «Расписание» показываем только для привычки
+        return (mode == .habit) ? SettingsRow.allCases.count : 1
     }
 
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
@@ -424,7 +495,8 @@ extension CreateHabitViewController: UITableViewDataSource {
         cell.backgroundColor = .ypBackground
 
         // скрыть разделитель у последней
-        if indexPath.row == SettingsRow.allCases.count - 1 {
+        let rowsCount = self.tableView(tableView, numberOfRowsInSection: indexPath.section)
+        if indexPath.row == rowsCount - 1 {
             cell.separatorInset = UIEdgeInsets(top: 0, left: tableView.bounds.width, bottom: 0, right: 0)
         } else {
             cell.separatorInset = UIEdgeInsets(top: 0, left: 16, bottom: 0, right: 16)
@@ -434,6 +506,7 @@ extension CreateHabitViewController: UITableViewDataSource {
 }
 
 // MARK: - UICollectionViewDataSource
+
 extension CreateHabitViewController: UICollectionViewDataSource {
     func numberOfSections(in collectionView: UICollectionView) -> Int { 1 }
 
@@ -456,6 +529,7 @@ extension CreateHabitViewController: UICollectionViewDataSource {
 }
 
 // MARK: - UICollectionViewDelegate
+
 extension CreateHabitViewController: UICollectionViewDelegate {
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         if collectionView === emojiCollection {
@@ -473,6 +547,7 @@ extension CreateHabitViewController: UICollectionViewDelegate {
 }
 
 // MARK: - UICollectionViewDelegateFlowLayout
+
 extension CreateHabitViewController: UICollectionViewDelegateFlowLayout {
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
         let itemsPerRow: CGFloat = 6
@@ -484,6 +559,7 @@ extension CreateHabitViewController: UICollectionViewDelegateFlowLayout {
 }
 
 // MARK: - UITextFieldDelegate
+
 extension CreateHabitViewController: UITextFieldDelegate {
     func textField(_ textField: UITextField, shouldChangeCharactersIn range: NSRange, replacementString string: String) -> Bool {
         if string.rangeOfCharacter(from: .newlines) != nil { return false }
@@ -500,6 +576,7 @@ extension CreateHabitViewController: UITextFieldDelegate {
 }
 
 // MARK: - Category delegate
+
 extension CreateHabitViewController: TrackerCategoryViewControllerDelegate {
     func categoryViewController(_ vc: TrackerCategoryViewController, didPick title: String) {
         selectedCategoryTitle = title

@@ -11,6 +11,14 @@ protocol TrackersProvider: AnyObject {
     var onChange: (() -> Void)? { get set }
     func snapshot(for date: Date, query: String?) throws -> [TrackerCategory]
     func createTracker(_ tracker: Tracker, in categoryTitle: String) throws
+
+    func updateTracker(id: UUID,
+                       name: String,
+                       schedule: Set<Weekday>,
+                       colorHex: String,
+                       emoji: String,
+                       categoryTitle: String) throws
+
     func toggleRecord(trackerId: UUID, on date: Date) throws
     func totalDays(for trackerId: UUID) throws -> Int
     func isDone(trackerId: UUID, on date: Date) throws -> Bool

@@ -7,10 +7,21 @@
 
 import CoreData
 
-protocol TrackerStoring {
-    func create(_ tracker: Tracker, categoryTitle: String) throws
-    func snapshot() throws -> [(tracker: Tracker, categoryTitle: String)]
+protocol TrackerStoring: AnyObject {
     var onChange: (() -> Void)? { get set }
+
+    func snapshot() throws -> [(tracker: Tracker, categoryTitle: String)]
+    func create(_ tracker: Tracker, categoryTitle: String) throws
+
+    func update(id: UUID,
+                name: String,
+                schedule: Set<Weekday>,
+                colorHex: String,
+                emoji: String,
+                categoryTitle: String) throws
+
+    func delete(id: UUID) throws
+    func togglePin(id: UUID, categoryStore: TrackerCategoryStoring) throws
 }
 
 final class TrackerStore: NSObject, TrackerStoring {
@@ -76,6 +87,42 @@ final class TrackerStore: NSObject, TrackerStoring {
 extension TrackerStore: NSFetchedResultsControllerDelegate {
     func controllerDidChangeContent(_ controller: NSFetchedResultsController<NSFetchRequestResult>) {
         onChange?()
+    }
+}
+
+extension TrackerStore {
+
+    func update(id: UUID,
+                name: String,
+                schedule: Set<Weekday>,
+                colorHex: String,
+                emoji: String,
+                categoryTitle: String) throws {
+
+        try stack.performBackgroundTask { ctx in
+            // 1) найти объект
+            let req: NSFetchRequest<TrackerCoreData> = TrackerCoreData.fetchRequest()
+            req.predicate = NSPredicate(format: "id == %@", id as CVarArg)
+            req.fetchLimit = 1
+
+            guard let obj = try ctx.fetch(req).first else { return }
+
+            // 2) обновить поля
+            obj.name = name
+            obj.emoji = emoji
+            obj.colorHex = colorHex
+
+            // 3) расписание — используем тот же формат, что в create/snapshot (битовая маска)
+            let mask = WeekdayMask.make(from: schedule)
+            obj.scheduleMask = Int16(mask)
+
+            // 4) категория
+            let cat = try self.categoryStore.ensureCategory(title: categoryTitle, in: ctx)
+            obj.category = cat
+
+            // 5) сохранение сделает CoreDataStack.performBackgroundTask
+            // и изменения прилетят во viewContext (automaticallyMergesChangesFromParent = true)
+        }
     }
 }
 

@@ -146,9 +146,9 @@ final class TrackersViewController: UIViewController {
 
     // MARK: - Actions
     @objc private func didTapPlus() {
-        let vc = CreateHabitViewController(coreDataStack: coreDataStack)
-        vc.delegate = self
-        let nav = UINavigationController(rootViewController: vc)
+        let chooser = ChooseTrackerTypeViewController()
+        chooser.delegate = self
+        let nav = UINavigationController(rootViewController: chooser)
         nav.modalPresentationStyle = .formSheet
         present(nav, animated: true)
     }
@@ -205,6 +205,8 @@ final class TrackersViewController: UIViewController {
 
 // MARK: - CreateHabitDelegate
 extension TrackersViewController: CreateHabitDelegate {
+
+    // СОЗДАНИЕ — как было
     func createHabitDidFinish(name: String,
                               schedule: Set<Weekday>,
                               colorHex: String,
@@ -212,9 +214,29 @@ extension TrackersViewController: CreateHabitDelegate {
                               categoryTitle: String) {
         let tracker = Tracker(name: name, colorHex: colorHex, emoji: emoji, schedule: schedule)
         try? provider.createTracker(tracker, in: categoryTitle)
+        dismiss(animated: true)
+        reloadSnapshot()
+    }
+
+
+    func editHabitDidFinish(id: UUID,
+                            name: String,
+                            schedule: Set<Weekday>,
+                            colorHex: String,
+                            emoji: String,
+                            categoryTitle: String) {
+      
+        try? provider.updateTracker(id: id,
+                                    name: name,
+                                    schedule: schedule,
+                                    colorHex: colorHex,
+                                    emoji: emoji,
+                                    categoryTitle: categoryTitle)
+        dismiss(animated: true)
         reloadSnapshot()
     }
 }
+
 
 // MARK: - Collection
 extension TrackersViewController: UICollectionViewDataSource, UICollectionViewDelegate, UICollectionViewDelegateFlowLayout, TrackerCellDelegate {
@@ -413,6 +435,15 @@ extension TrackersViewController {
     }
 }
 
+// MARK: - ChooseTrackerTypeDelegate
+extension TrackersViewController: ChooseTrackerTypeDelegate {
+    func chooseTypeDidPick(_ type: TrackerType) {
+        let vc = CreateHabitViewController(coreDataStack: coreDataStack, mode: type)
+        vc.delegate = self
+        (presentedViewController as? UINavigationController)?.pushViewController(vc, animated: true)
+    }
+}
+
 
 extension TrackersViewController {
 
@@ -439,24 +470,36 @@ extension TrackersViewController {
             actionProvider: { [weak self] _ in
                 guard let self else { return UIMenu() }
 
-                // можешь вернуть иконки, как раньше, либо без иконок — выбирай
-                let pin = UIAction(title: "Закрепить", image: UIImage(systemName: "pin")) { _ in
+                let pin = UIAction(title: "Закрепить") { _ in
                     try? self.provider.togglePin(id: t.id)
                     self.reloadSnapshot()
                 }
 
-                let edit = UIAction(title: "Редактировать", image: UIImage(systemName: "square.and.pencil")) { _ in
-                    self.presentEditor(for: t)
+                let edit = UIAction(title: "Редактировать") { [weak self] _ in
+                    guard let self else { return }
+                    let t = self.tracker(at: indexPath)
+                    let categoryTitle = self.filteredCategories[indexPath.section].title
+                    let mode: TrackerType = t.schedule.isEmpty ? .event : .habit
+
+                    let vc = CreateHabitViewController(coreDataStack: self.coreDataStack,
+                                                       mode: mode,
+                                                       editing: (tracker: t, categoryTitle: categoryTitle))
+                    vc.delegate = self
+                    let nav = UINavigationController(rootViewController: vc)
+                    nav.modalPresentationStyle = .formSheet
+                    self.present(nav, animated: true)
                 }
 
-                let delete = UIAction(title: "Удалить",
-                                      image: UIImage(systemName: "trash"),
-                                      attributes: [.destructive]) { _ in
+                let delete = UIAction(
+                    title: "Удалить",
+                    attributes: [.destructive]
+                ) { _ in
                     self.confirmDelete(tracker: t, indexPath: indexPath)
                 }
 
                 return UIMenu(children: [pin, edit, delete])
             }
+
         )
     }
 }
