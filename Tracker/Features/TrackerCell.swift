@@ -50,7 +50,7 @@ final class TrackerCell: UICollectionViewCell {
 
     private let daysLabel: UILabel = {
         let l = UILabel()
-        l.textColor = .fromHex("#1A1B22")
+        l.textColor = UIColor(hex: "#1A1B22") ?? .black
         l.font = .systemFont(ofSize: 12, weight: .medium)
         l.translatesAutoresizingMaskIntoConstraints = false
         return l
@@ -183,5 +183,20 @@ final class TrackerCell: UICollectionViewCell {
         
         toggleButton.isEnabled = canToggle
         toggleButton.alpha = canToggle ? 1.0 : 0.4
+    }
+}
+
+extension TrackerCell {
+    func snapshotPreviewViewController() -> UIViewController {
+        let vc = UIViewController()
+        vc.view.backgroundColor = .clear
+        let snap = contentView.snapshotView(afterScreenUpdates: true) ?? UIView()
+        snap.translatesAutoresizingMaskIntoConstraints = false
+        vc.view.addSubview(snap)
+        NSLayoutConstraint.activate([
+            snap.centerXAnchor.constraint(equalTo: vc.view.centerXAnchor),
+            snap.centerYAnchor.constraint(equalTo: vc.view.centerYAnchor)
+        ])
+        return vc
     }
 }
