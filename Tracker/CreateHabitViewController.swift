@@ -59,6 +59,8 @@ final class CreateHabitViewController: UIViewController {
         super.init(nibName: nil, bundle: nil)
     }
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+    
+    
 
     // MARK: - State
     private var selectedSchedule = Set<Weekday>()
@@ -147,15 +149,17 @@ final class CreateHabitViewController: UIViewController {
     }()
 
     private let settingsTableView: UITableView = {
-        let tv = UITableView()
+        let tv = UITableView(frame: .zero, style: .plain)
         tv.register(UITableViewCell.self, forCellReuseIdentifier: "settingsCell")
         tv.rowHeight = 75
-        tv.layer.cornerRadius = 16
-        tv.separatorInset = UIEdgeInsets(top: 0, left: 16, bottom: 0, right: 16)
         tv.isScrollEnabled = false
-        tv.clipsToBounds = true
+        tv.backgroundColor = .clear          
+        tv.layer.cornerRadius = 0
+        tv.clipsToBounds = false
+        tv.separatorInset = UIEdgeInsets(top: 0, left: 16, bottom: 0, right: 16)
         return tv
     }()
+
 
     private lazy var cancelButton: UIButton = {
         let b = UIButton(type: .system)

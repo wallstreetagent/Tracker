@@ -39,11 +39,26 @@ final class TrackersViewController: UIViewController {
     }()
 
     private let placeholderImage: UIImageView = {
-        let iv = UIImageView(image: UIImage(named: "placeholderStar"))
+        let iv = UIImageView()
         iv.contentMode = .scaleAspectFit
         iv.translatesAutoresizingMaskIntoConstraints = false
         return iv
     }()
+
+    private func showPlaceholder(imageNamed: String, text: String) {
+        placeholderImage.image = UIImage(named: imageNamed)
+        placeholderLabel.text = text
+        placeholderImage.isHidden = false
+        placeholderLabel.isHidden = false
+        collectionView.isHidden = true
+    }
+
+    private func hidePlaceholder() {
+        placeholderImage.isHidden = true
+        placeholderLabel.isHidden = true
+        collectionView.isHidden = false
+    }
+
 
     private let placeholderLabel: UILabel = {
         let l = UILabel()
@@ -133,6 +148,8 @@ final class TrackersViewController: UIViewController {
 
             placeholderImage.centerXAnchor.constraint(equalTo: view.centerXAnchor),
             placeholderImage.centerYAnchor.constraint(equalTo: view.safeAreaLayoutGuide.centerYAnchor),
+            placeholderImage.widthAnchor.constraint(equalToConstant: 80),
+                    placeholderImage.heightAnchor.constraint(equalToConstant: 80),
 
             placeholderLabel.topAnchor.constraint(equalTo: placeholderImage.bottomAnchor, constant: 8),
             placeholderLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
@@ -170,13 +187,24 @@ final class TrackersViewController: UIViewController {
         filteredCategories = categories
 
         rebuildCompletedTodaySet()
-
-        let isEmpty = filteredCategories.isEmpty || filteredCategories.allSatisfy { $0.trackers.isEmpty }
-        placeholderImage.isHidden = !isEmpty
-        placeholderLabel.isHidden = !isEmpty
-        collectionView.isHidden = isEmpty
-
         collectionView.reloadData()
+
+        // Есть ли вообще какие-то трекеры в базе (без учёта поиска)
+        let hasAnyTrackers = (try? provider.snapshot(for: currentDate, query: ""))?
+            .contains(where: { !$0.trackers.isEmpty }) ?? false
+
+        // Есть ли элементы после текущего фильтра/поиска
+        let hasResults = filteredCategories.contains { !$0.trackers.isEmpty }
+
+        if !hasAnyTrackers {
+            // Пустое состояние «первый запуск»
+            showPlaceholder(imageNamed: "placeholderStar", text: "Что будем отслеживать?")
+        } else if !query.isEmpty && !hasResults {
+            // Пусто именно по результатам поиска
+            showPlaceholder(imageNamed: "nothing", text: "Ничего не найдено")
+        } else {
+            hidePlaceholder()
+        }
     }
 
     private func rebuildCompletedTodaySet() {
@@ -205,8 +233,6 @@ final class TrackersViewController: UIViewController {
 
 // MARK: - CreateHabitDelegate
 extension TrackersViewController: CreateHabitDelegate {
-
-    // СОЗДАНИЕ — как было
     func createHabitDidFinish(name: String,
                               schedule: Set<Weekday>,
                               colorHex: String,
@@ -214,10 +240,8 @@ extension TrackersViewController: CreateHabitDelegate {
                               categoryTitle: String) {
         let tracker = Tracker(name: name, colorHex: colorHex, emoji: emoji, schedule: schedule)
         try? provider.createTracker(tracker, in: categoryTitle)
-        dismiss(animated: true)
         reloadSnapshot()
     }
-
 
     func editHabitDidFinish(id: UUID,
                             name: String,
@@ -225,17 +249,16 @@ extension TrackersViewController: CreateHabitDelegate {
                             colorHex: String,
                             emoji: String,
                             categoryTitle: String) {
-      
         try? provider.updateTracker(id: id,
                                     name: name,
                                     schedule: schedule,
                                     colorHex: colorHex,
                                     emoji: emoji,
                                     categoryTitle: categoryTitle)
-        dismiss(animated: true)
         reloadSnapshot()
     }
 }
+
 
 
 // MARK: - Collection
@@ -330,9 +353,9 @@ extension TrackersViewController: UITextFieldDelegate {
 
 extension TrackersViewController {
 
-    private func makeBannerPreview(for configuration: UIContextMenuConfiguration) -> UITargetedPreview? {
-        guard let ns = configuration.identifier as? NSIndexPath else { return nil }
-        let indexPath = ns as IndexPath
+   private func makeBannerPreview(for configuration: UIContextMenuConfiguration) -> UITargetedPreview? {
+       guard let ns = configuration.identifier as? NSIndexPath else { return nil }
+       let indexPath = ns as IndexPath
 
         let t = tracker(at: indexPath)
         let color = UIColor(hex: t.colorHex) ?? .systemOrange
@@ -446,6 +469,42 @@ extension TrackersViewController: ChooseTrackerTypeDelegate {
 
 
 extension TrackersViewController {
+    
+    // Полностью отключаем системный highlight (не влияет на long press меню)
+    func collectionView(_ collectionView: UICollectionView,
+                        shouldHighlightItemAt indexPath: IndexPath) -> Bool { false }
+
+    func collectionView(_ collectionView: UICollectionView,
+                        shouldSelectItemAt indexPath: IndexPath) -> Bool { false }
+
+    // Когда меню собирается показаться — гасим «lift» (сжатие) у исходной ячейки
+    func collectionView(_ collectionView: UICollectionView,
+                        willDisplayContextMenu configuration: UIContextMenuConfiguration,
+                        animator: UIContextMenuInteractionAnimating?) {
+        animator?.addAnimations {
+            if let ns = configuration.identifier as? NSIndexPath,
+               let cell = collectionView.cellForItem(at: ns as IndexPath) {
+                cell.transform = .identity
+                cell.contentView.transform = .identity
+                cell.layer.transform = CATransform3DIdentity
+            }
+        }
+    }
+
+    // Когда меню закрывается — на всякий случай тоже обнуляем
+    func collectionView(_ collectionView: UICollectionView,
+                        willEndContextMenuInteraction configuration: UIContextMenuConfiguration,
+                        animator: UIContextMenuInteractionAnimating?) {
+        animator?.addAnimations {
+            if let ns = configuration.identifier as? NSIndexPath,
+               let cell = collectionView.cellForItem(at: ns as IndexPath) {
+                cell.transform = .identity
+                cell.contentView.transform = .identity
+                cell.layer.transform = CATransform3DIdentity
+            }
+        }
+    }
+
 
     func collectionView(_ collectionView: UICollectionView,
                         contextMenuConfigurationForItemAt indexPath: IndexPath,

@@ -29,7 +29,6 @@ final class TrackerCell: UICollectionViewCell {
         let l = UILabel()
         l.textAlignment = .center
         l.font = .systemFont(ofSize: 17)
-    
         l.backgroundColor = UIColor.white.withAlphaComponent(0.30)
         l.layer.cornerRadius = 14
         l.layer.masksToBounds = true
@@ -46,7 +45,6 @@ final class TrackerCell: UICollectionViewCell {
         label.translatesAutoresizingMaskIntoConstraints = false
         return label
     }()
-
 
     private let daysLabel: UILabel = {
         let l = UILabel()
@@ -81,7 +79,6 @@ final class TrackerCell: UICollectionViewCell {
         super.init(frame: frame)
         contentView.backgroundColor = .clear
 
-        
         layer.shadowColor = UIColor.black.cgColor
         layer.shadowOpacity = 0.06
         layer.shadowRadius = 6
@@ -96,13 +93,11 @@ final class TrackerCell: UICollectionViewCell {
         toggleButton.addTarget(self, action: #selector(didTapToggle), for: .touchUpInside)
 
         NSLayoutConstraint.activate([
-         
             cardView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
             cardView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
             cardView.topAnchor.constraint(equalTo: contentView.topAnchor),
             cardView.heightAnchor.constraint(equalToConstant: 90),
 
-        
             emojiBadge.leadingAnchor.constraint(equalTo: cardView.leadingAnchor, constant: 16),
             emojiBadge.topAnchor.constraint(equalTo: cardView.topAnchor, constant: 16),
             emojiBadge.widthAnchor.constraint(equalToConstant: 28),
@@ -112,7 +107,6 @@ final class TrackerCell: UICollectionViewCell {
             nameLabel.trailingAnchor.constraint(equalTo: cardView.trailingAnchor, constant: -16),
             nameLabel.bottomAnchor.constraint(equalTo: cardView.bottomAnchor, constant: -16),
 
-       
             daysLabel.leadingAnchor.constraint(equalTo: cardView.leadingAnchor, constant: 16),
             daysLabel.topAnchor.constraint(equalTo: cardView.bottomAnchor, constant: 8),
             daysLabel.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -8),
@@ -124,8 +118,19 @@ final class TrackerCell: UICollectionViewCell {
 
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
+    // MARK: — ВАЖНО: убираем любые эффекты сжатия/подсветки
+
+    override var isHighlighted: Bool {
+        didSet { neutralizePressEffects() }
+    }
+
+    override var isSelected: Bool {
+        didSet { neutralizePressEffects() }
+    }
+
     override func prepareForReuse() {
         super.prepareForReuse()
+        neutralizePressEffects()
         nameLabel.text = nil
         emojiBadge.text = nil
         daysLabel.text = nil
@@ -133,6 +138,17 @@ final class TrackerCell: UICollectionViewCell {
         canToggle = true
         accentColor = UIColor(red: 0x33/255, green: 0xCF/255, blue: 0x69/255, alpha: 1)
         updateToggleStyle()
+    }
+
+    private func neutralizePressEffects() {
+        // Сбрасываем любые возможные трансформации
+        contentView.transform = .identity
+        transform = .identity
+        layer.transform = CATransform3DIdentity
+        // Обновляем лейаут без анимации, чтобы исключить «подпрыгивания»
+        UIView.performWithoutAnimation {
+            contentView.layoutIfNeeded()
+        }
     }
 
     // MARK: Public API
@@ -169,18 +185,16 @@ final class TrackerCell: UICollectionViewCell {
         toggleButton.layer.cornerRadius = 17
         toggleButton.layer.masksToBounds = true
         toggleButton.layer.borderWidth = 0
-        
+
         if isDoneToday {
-        
             toggleButton.backgroundColor = accentColor.withAlphaComponent(0.5)
             toggleButton.setImage(UIImage(systemName: "checkmark"), for: .normal)
         } else {
-   
             toggleButton.backgroundColor = accentColor
             toggleButton.setImage(UIImage(systemName: "plus"), for: .normal)
         }
         toggleButton.tintColor = .white
-        
+
         toggleButton.isEnabled = canToggle
         toggleButton.alpha = canToggle ? 1.0 : 0.4
     }
