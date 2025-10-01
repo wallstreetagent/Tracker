@@ -9,7 +9,6 @@ import UIKit
 
 final class TabBarController: UITabBarController {
 
-
     private let coreDataStack: CoreDataStack
     private let trackersProvider: TrackersProvider
 
@@ -26,7 +25,6 @@ final class TabBarController: UITabBarController {
     }
 
     private func setupTabs() {
-     
         let trackersVC = TrackersViewController(coreDataStack: coreDataStack, provider: trackersProvider)
         let trackersNC = UINavigationController(rootViewController: trackersVC)
         trackersNC.tabBarItem = UITabBarItem(
@@ -35,8 +33,8 @@ final class TabBarController: UITabBarController {
             selectedImage: UIImage(named: "tab_trackers_selected")?.withRenderingMode(.alwaysOriginal)
         )
 
-  
-        let statsVC = StatisticsViewController()
+        let statsProvider = StatisticsProviderCoreData(stack: coreDataStack)
+        let statsVC = StatisticsViewController(provider: statsProvider)
         let statsNC = UINavigationController(rootViewController: statsVC)
         statsNC.tabBarItem = UITabBarItem(
             title: "Статистика",
@@ -46,7 +44,6 @@ final class TabBarController: UITabBarController {
 
         viewControllers = [trackersNC, statsNC]
 
-        // необязательно, просто чтобы фон и тинт не перекрашивали ваши PNG
         tabBar.tintColor = .ypBlackDay
         if #available(iOS 15.0, *) {
             let ap = UITabBarAppearance()
