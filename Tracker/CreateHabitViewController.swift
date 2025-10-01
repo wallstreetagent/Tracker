@@ -17,7 +17,7 @@ protocol CreateHabitDelegate: AnyObject {
                               emoji: String,
                               categoryTitle: String)
 
-    /// Вызывается при сохранении изменений существующего трекера
+ 
     func editHabitDidFinish(id: UUID,
                             name: String,
                             schedule: Set<Weekday>,
@@ -47,7 +47,7 @@ final class CreateHabitViewController: UIViewController {
     private let coreDataStack: CoreDataStack
     private let mode: TrackerType
 
-    /// Если редактируем — здесь исходный трекер и его категория
+  
     private var editingContext: (tracker: Tracker, categoryTitle: String)?
 
     init(coreDataStack: CoreDataStack,
@@ -363,7 +363,7 @@ final class CreateHabitViewController: UIViewController {
 
     private func updateCreateButtonState() {
         let hasName = !(nameTextField.text?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ?? true)
-        let hasDays = (mode == .habit) ? !selectedSchedule.isEmpty : true // для события расписание не требуется
+        let hasDays = (mode == .habit) ? !selectedSchedule.isEmpty : true
         isCreateButtonEnabled = hasName && hasDays
     }
 
@@ -385,7 +385,7 @@ final class CreateHabitViewController: UIViewController {
 
     @objc private func cancel() { dismiss(animated: true) }
 
-    /// Создать новый или сохранить изменения существующего
+  
     @objc private func create() {
         guard isCreateButtonEnabled,
               let name = nameTextField.text?.trimmingCharacters(in: .whitespacesAndNewlines),
@@ -395,7 +395,7 @@ final class CreateHabitViewController: UIViewController {
         let colorHex = selectedColorHex
         let emoji = selectedEmoji
 
-        // для событий можно хранить пустой сет; при необходимости подставь allCases
+     
         let scheduleToSave: Set<Weekday> = (mode == .habit) ? selectedSchedule : Set<Weekday>()
 
         if let ctx = editingContext {
@@ -470,7 +470,7 @@ extension CreateHabitViewController: UITableViewDelegate {
 
 extension CreateHabitViewController: UITableViewDataSource {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        // «Расписание» показываем только для привычки
+     
         return (mode == .habit) ? SettingsRow.allCases.count : 1
     }
 

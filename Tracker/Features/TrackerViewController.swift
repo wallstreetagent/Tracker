@@ -25,6 +25,7 @@ final class TrackersViewController: UIViewController {
     private var filteredCategories: [TrackerCategory] = []
     private var completedToday: Set<UUID> = []
     private var currentDate: Date = Calendar.current.startOfDay(for: Date())
+    private var activeFilter: FilterOption = .all
 
     // MARK: - UI
     private let searchField: UISearchTextField = {
@@ -38,27 +39,27 @@ final class TrackersViewController: UIViewController {
         return f
     }()
 
+    private lazy var filterButton: UIButton = {
+        let b = UIButton(type: .system)
+        b.setTitle("Фильтры", for: .normal)
+        b.titleLabel?.font = .systemFont(ofSize: 17, weight: .semibold)
+        b.backgroundColor = .label.withAlphaComponent(0.9)
+        b.setTitleColor(.systemBackground, for: .normal)
+        b.layer.cornerRadius = 16
+        b.layer.masksToBounds = true
+        b.contentEdgeInsets = UIEdgeInsets(top: 10, left: 20, bottom: 10, right: 20)
+        b.translatesAutoresizingMaskIntoConstraints = false
+        b.addTarget(self, action: #selector(didTapFilters), for: .touchUpInside)
+        return b
+    }()
+    private var filterButtonBottomConstraint: NSLayoutConstraint?
+
     private let placeholderImage: UIImageView = {
         let iv = UIImageView()
         iv.contentMode = .scaleAspectFit
         iv.translatesAutoresizingMaskIntoConstraints = false
         return iv
     }()
-
-    private func showPlaceholder(imageNamed: String, text: String) {
-        placeholderImage.image = UIImage(named: imageNamed)
-        placeholderLabel.text = text
-        placeholderImage.isHidden = false
-        placeholderLabel.isHidden = false
-        collectionView.isHidden = true
-    }
-
-    private func hidePlaceholder() {
-        placeholderImage.isHidden = true
-        placeholderLabel.isHidden = true
-        collectionView.isHidden = false
-    }
-
 
     private let placeholderLabel: UILabel = {
         let l = UILabel()
@@ -108,6 +109,8 @@ final class TrackersViewController: UIViewController {
         searchField.delegate = self
         searchField.addTarget(self, action: #selector(searchChanged), for: .editingChanged)
 
+        collectionView.alwaysBounceVertical = true
+
         navDatePicker.date = Date()
         currentDate = Calendar.current.startOfDay(for: navDatePicker.date)
 
@@ -115,6 +118,16 @@ final class TrackersViewController: UIViewController {
 
         provider.onChange = { [weak self] in
             DispatchQueue.main.async { self?.reloadSnapshot() }
+        }
+    }
+
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        // Обновляем нижние инкеты под фактическую высоту кнопки
+        let extra = filterButton.isHidden ? 0 : (filterButton.bounds.height + 24)
+        if collectionView.contentInset.bottom != extra {
+            collectionView.contentInset.bottom = extra
+            collectionView.verticalScrollIndicatorInsets.bottom = extra
         }
     }
 
@@ -139,6 +152,7 @@ final class TrackersViewController: UIViewController {
         view.addSubview(placeholderImage)
         view.addSubview(placeholderLabel)
         view.addSubview(collectionView)
+        view.addSubview(filterButton)
 
         NSLayoutConstraint.activate([
             searchField.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 5),
@@ -149,7 +163,7 @@ final class TrackersViewController: UIViewController {
             placeholderImage.centerXAnchor.constraint(equalTo: view.centerXAnchor),
             placeholderImage.centerYAnchor.constraint(equalTo: view.safeAreaLayoutGuide.centerYAnchor),
             placeholderImage.widthAnchor.constraint(equalToConstant: 80),
-                    placeholderImage.heightAnchor.constraint(equalToConstant: 80),
+            placeholderImage.heightAnchor.constraint(equalToConstant: 80),
 
             placeholderLabel.topAnchor.constraint(equalTo: placeholderImage.bottomAnchor, constant: 8),
             placeholderLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
@@ -157,8 +171,29 @@ final class TrackersViewController: UIViewController {
             collectionView.topAnchor.constraint(equalTo: searchField.bottomAnchor, constant: 24),
             collectionView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
             collectionView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor),
-            collectionView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor)
+            collectionView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
+
+            filterButton.centerXAnchor.constraint(equalTo: view.centerXAnchor)
         ])
+
+        let bottom = filterButton.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -16)
+        bottom.isActive = true
+        filterButtonBottomConstraint = bottom
+    }
+
+    // MARK: - Placeholder helpers
+    private func showPlaceholder(imageNamed: String, text: String) {
+        placeholderImage.image = UIImage(named: imageNamed)
+        placeholderLabel.text = text
+        placeholderImage.isHidden = false
+        placeholderLabel.isHidden = false
+        collectionView.isHidden = true
+    }
+
+    private func hidePlaceholder() {
+        placeholderImage.isHidden = true
+        placeholderLabel.isHidden = true
+        collectionView.isHidden = false
     }
 
     // MARK: - Actions
@@ -168,6 +203,31 @@ final class TrackersViewController: UIViewController {
         let nav = UINavigationController(rootViewController: chooser)
         nav.modalPresentationStyle = .formSheet
         present(nav, animated: true)
+    }
+
+    @objc private func didTapFilters() {
+        let hasAnyTrackers = (try? provider.snapshot(for: currentDate, query: ""))?
+            .contains(where: { !$0.trackers.isEmpty }) ?? false
+        guard hasAnyTrackers else { return }
+
+        let vc = FiltersViewController(current: activeFilter)
+        vc.delegate = self
+        let nav = UINavigationController(rootViewController: vc)
+        present(nav, animated: true)
+    }
+
+    private func updateFilterButtonAppearance() {
+        if activeFilter.isReset {
+            filterButton.backgroundColor = .label.withAlphaComponent(0.9)
+            filterButton.setTitleColor(.systemBackground, for: .normal)
+            filterButton.layer.borderWidth = 0
+            filterButton.layer.borderColor = nil
+        } else {
+            filterButton.backgroundColor = .systemBackground
+            filterButton.setTitleColor(.systemRed, for: .normal)
+            filterButton.layer.borderWidth = 1
+            filterButton.layer.borderColor = UIColor.systemRed.cgColor
+        }
     }
 
     @objc private func dateChanged(_ sender: UIDatePicker) {
@@ -184,27 +244,63 @@ final class TrackersViewController: UIViewController {
         let query = (searchField.text ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
 
         categories = (try? provider.snapshot(for: currentDate, query: query)) ?? []
-        filteredCategories = categories
-
         rebuildCompletedTodaySet()
+
+        // Базовый список (поиск/дата уже учтены снапшотом провайдера)
+        var working = categories
+
+        // 1) Применяем доп. фильтр
+        switch activeFilter {
+        case .all:
+            break
+        case .today:
+            // today = переключиться на сегодня и сбросить фильтр (по ТЗ)
+            let today = Calendar.current.startOfDay(for: Date())
+            if currentDate != today {
+                currentDate = today
+                navDatePicker.date = today
+                categories = (try? provider.snapshot(for: currentDate, query: query)) ?? []
+                working = categories
+                rebuildCompletedTodaySet()
+            }
+            activeFilter = .all
+        case .completed:
+            working = categories.compactMap { cat in
+                let t = cat.trackers.filter { completedToday.contains($0.id) }
+                return t.isEmpty ? nil : TrackerCategory(title: cat.title, trackers: t)
+            }
+        case .uncompleted:
+            working = categories.compactMap { cat in
+                let t = cat.trackers.filter { !completedToday.contains($0.id) }
+                return t.isEmpty ? nil : TrackerCategory(title: cat.title, trackers: t)
+            }
+        }
+
+        filteredCategories = working
         collectionView.reloadData()
 
-        // Есть ли вообще какие-то трекеры в базе (без учёта поиска)
+        // 2) Плейсхолдеры/видимость кнопки
         let hasAnyTrackers = (try? provider.snapshot(for: currentDate, query: ""))?
             .contains(where: { !$0.trackers.isEmpty }) ?? false
 
-        // Есть ли элементы после текущего фильтра/поиска
         let hasResults = filteredCategories.contains { !$0.trackers.isEmpty }
 
+        // Если нет трекеров на выбранный день — кнопку скрыть
+        filterButton.isHidden = !hasAnyTrackers
+
         if !hasAnyTrackers {
-            // Пустое состояние «первый запуск»
             showPlaceholder(imageNamed: "placeholderStar", text: "Что будем отслеживать?")
-        } else if !query.isEmpty && !hasResults {
-            // Пусто именно по результатам поиска
+        } else if (!query.isEmpty || !activeFilter.isReset) && !hasResults {
+            // Ничего по поиску ИЛИ по текущему фильтру
             showPlaceholder(imageNamed: "nothing", text: "Ничего не найдено")
         } else {
             hidePlaceholder()
         }
+
+        updateFilterButtonAppearance()
+
+        // Пересчитать нижние инкеты, если изменилась видимость кнопки
+        view.setNeedsLayout()
     }
 
     private func rebuildCompletedTodaySet() {
@@ -258,8 +354,6 @@ extension TrackersViewController: CreateHabitDelegate {
         reloadSnapshot()
     }
 }
-
-
 
 // MARK: - Collection
 extension TrackersViewController: UICollectionViewDataSource, UICollectionViewDelegate, UICollectionViewDelegateFlowLayout, TrackerCellDelegate {
@@ -341,8 +435,6 @@ extension TrackersViewController: UICollectionViewDataSource, UICollectionViewDe
     }
 }
 
-
-
 // MARK: - Search delegate
 extension TrackersViewController: UITextFieldDelegate {
     func textFieldShouldReturn(_ textField: UITextField) -> Bool {
@@ -351,81 +443,7 @@ extension TrackersViewController: UITextFieldDelegate {
     }
 }
 
-extension TrackersViewController {
-
-   private func makeBannerPreview(for configuration: UIContextMenuConfiguration) -> UITargetedPreview? {
-       guard let ns = configuration.identifier as? NSIndexPath else { return nil }
-       let indexPath = ns as IndexPath
-
-        let t = tracker(at: indexPath)
-        let color = UIColor(hex: t.colorHex) ?? .systemOrange
-
-        // делаем такую же плашку, но как UIView
-        let size = TrackerContextPreviewViewController.targetSize
-        let banner = UIView(frame: CGRect(origin: .zero, size: size))
-        banner.backgroundColor = .clear
-        let container = UIView(frame: banner.bounds)
-        container.autoresizingMask = [.flexibleWidth, .flexibleHeight]
-        container.backgroundColor = color
-        container.layer.cornerRadius = 16
-        container.layer.masksToBounds = true
-        banner.addSubview(container)
-
-        let emoji = UILabel()
-        emoji.text = t.emoji
-        emoji.font = .systemFont(ofSize: 22, weight: .regular)
-        emoji.setContentHuggingPriority(.required, for: .horizontal)
-
-        let title = UILabel()
-        title.text = t.name
-        title.textColor = .white
-        title.font = .systemFont(ofSize: 14, weight: .semibold)
-        title.numberOfLines = 2
-
-        let stack = UIStackView(arrangedSubviews: [emoji, title])
-        stack.axis = .horizontal
-        stack.alignment = .center
-        stack.spacing = 10
-        stack.isLayoutMarginsRelativeArrangement = true
-        stack.layoutMargins = UIEdgeInsets(top: 10, left: 12, bottom: 10, right: 12)
-        stack.translatesAutoresizingMaskIntoConstraints = false
-        container.addSubview(stack)
-        NSLayoutConstraint.activate([
-            stack.leadingAnchor.constraint(equalTo: container.leadingAnchor),
-            stack.trailingAnchor.constraint(equalTo: container.trailingAnchor),
-            stack.topAnchor.constraint(equalTo: container.topAnchor),
-            stack.bottomAnchor.constraint(equalTo: container.bottomAnchor)
-        ])
-
-        guard let attrs = collectionView.layoutAttributesForItem(at: indexPath) else {
-            return UITargetedPreview(view: banner)
-        }
-        let cellFrame = attrs.frame
-        // позиция плашки — над карточкой; при необходимости подстрой offset
-        let center = CGPoint(x: cellFrame.midX, y: cellFrame.minY + 36)
-
-        let target = UIPreviewTarget(container: collectionView, center: center)
-        let params = UIPreviewParameters()
-        params.backgroundColor = .clear
-        params.visiblePath = UIBezierPath(roundedRect: CGRect(origin: .zero, size: size), cornerRadius: 16)
-
-        return UITargetedPreview(view: banner, parameters: params, target: target)
-    }
-
-    // старт анимации (lift)
-    func collectionView(_ collectionView: UICollectionView,
-                        previewForHighlightingContextMenuWithConfiguration configuration: UIContextMenuConfiguration) -> UITargetedPreview? {
-        makeBannerPreview(for: configuration)
-    }
-
-    // завершение анимации (dismiss)
-    func collectionView(_ collectionView: UICollectionView,
-                        previewForDismissingContextMenuWithConfiguration configuration: UIContextMenuConfiguration) -> UITargetedPreview? {
-        makeBannerPreview(for: configuration)
-    }
-}
-
-
+// MARK: - Context menu preview helpers
 extension TrackersViewController {
 
     private func tracker(at indexPath: IndexPath) -> Tracker {
@@ -467,17 +485,91 @@ extension TrackersViewController: ChooseTrackerTypeDelegate {
     }
 }
 
+// MARK: - FiltersViewControllerDelegate
+extension TrackersViewController: FiltersViewControllerDelegate {
+    func filtersViewController(_ vc: FiltersViewController, didPick option: FilterOption) {
+        activeFilter = option
+        // .today внутри reloadSnapshot переключит дату и сбросит фильтр до .all
+        reloadSnapshot()
+    }
+}
 
+// MARK: - Context menu animations
 extension TrackersViewController {
-    
-    // Полностью отключаем системный highlight (не влияет на long press меню)
+
     func collectionView(_ collectionView: UICollectionView,
                         shouldHighlightItemAt indexPath: IndexPath) -> Bool { false }
 
     func collectionView(_ collectionView: UICollectionView,
                         shouldSelectItemAt indexPath: IndexPath) -> Bool { false }
 
-    // Когда меню собирается показаться — гасим «lift» (сжатие) у исходной ячейки
+    private func makeBannerPreview(for configuration: UIContextMenuConfiguration) -> UITargetedPreview? {
+        guard let ns = configuration.identifier as? NSIndexPath else { return nil }
+        let indexPath = ns as IndexPath
+
+        let t = tracker(at: indexPath)
+        let color = UIColor(hex: t.colorHex) ?? .systemOrange
+
+        let size = TrackerContextPreviewViewController.targetSize
+        let banner = UIView(frame: CGRect(origin: .zero, size: size))
+        banner.backgroundColor = .clear
+        let container = UIView(frame: banner.bounds)
+        container.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        container.backgroundColor = color
+        container.layer.cornerRadius = 16
+        container.layer.masksToBounds = true
+        banner.addSubview(container)
+
+        let emoji = UILabel()
+        emoji.text = t.emoji
+        emoji.font = .systemFont(ofSize: 22, weight: .regular)
+        emoji.setContentHuggingPriority(.required, for: .horizontal)
+
+        let title = UILabel()
+        title.text = t.name
+        title.textColor = .white
+        title.font = .systemFont(ofSize: 14, weight: .semibold)
+        title.numberOfLines = 2
+
+        let stack = UIStackView(arrangedSubviews: [emoji, title])
+        stack.axis = .horizontal
+        stack.alignment = .center
+        stack.spacing = 10
+        stack.isLayoutMarginsRelativeArrangement = true
+        stack.layoutMargins = UIEdgeInsets(top: 10, left: 12, bottom: 10, right: 12)
+        stack.translatesAutoresizingMaskIntoConstraints = false
+        container.addSubview(stack)
+        NSLayoutConstraint.activate([
+            stack.leadingAnchor.constraint(equalTo: container.leadingAnchor),
+            stack.trailingAnchor.constraint(equalTo: container.trailingAnchor),
+            stack.topAnchor.constraint(equalTo: container.topAnchor),
+            stack.bottomAnchor.constraint(equalTo: container.bottomAnchor)
+        ])
+
+        guard let attrs = collectionView.layoutAttributesForItem(at: indexPath) else {
+            return UITargetedPreview(view: banner)
+        }
+        let cellFrame = attrs.frame
+        let center = CGPoint(x: cellFrame.midX, y: cellFrame.minY + 36)
+
+        let target = UIPreviewTarget(container: collectionView, center: center)
+        let params = UIPreviewParameters()
+        params.backgroundColor = .clear
+        params.visiblePath = UIBezierPath(roundedRect: CGRect(origin: .zero, size: size), cornerRadius: 16)
+
+        return UITargetedPreview(view: banner, parameters: params, target: target)
+    }
+
+    func collectionView(_ collectionView: UICollectionView,
+                        previewForHighlightingContextMenuWithConfiguration configuration: UIContextMenuConfiguration) -> UITargetedPreview? {
+        makeBannerPreview(for: configuration)
+    }
+
+    func collectionView(_ collectionView: UICollectionView,
+                        previewForDismissingContextMenuWithConfiguration configuration: UIContextMenuConfiguration) -> UITargetedPreview? {
+        makeBannerPreview(for: configuration)
+    }
+
     func collectionView(_ collectionView: UICollectionView,
                         willDisplayContextMenu configuration: UIContextMenuConfiguration,
                         animator: UIContextMenuInteractionAnimating?) {
@@ -491,7 +583,6 @@ extension TrackersViewController {
         }
     }
 
-    // Когда меню закрывается — на всякий случай тоже обнуляем
     func collectionView(_ collectionView: UICollectionView,
                         willEndContextMenuInteraction configuration: UIContextMenuConfiguration,
                         animator: UIContextMenuInteractionAnimating?) {
@@ -504,7 +595,6 @@ extension TrackersViewController {
             }
         }
     }
-
 
     func collectionView(_ collectionView: UICollectionView,
                         contextMenuConfigurationForItemAt indexPath: IndexPath,
@@ -525,7 +615,6 @@ extension TrackersViewController {
                 vc.preferredContentSize = TrackerContextPreviewViewController.targetSize
                 return vc
             },
-
             actionProvider: { [weak self] _ in
                 guard let self else { return UIMenu() }
 
@@ -558,7 +647,6 @@ extension TrackersViewController {
 
                 return UIMenu(children: [pin, edit, delete])
             }
-
         )
     }
 }

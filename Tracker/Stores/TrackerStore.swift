@@ -112,7 +112,7 @@ extension TrackerStore {
             obj.emoji = emoji
             obj.colorHex = colorHex
 
-            // 3) расписание — используем тот же формат, что в create/snapshot (битовая маска)
+            // 3)
             let mask = WeekdayMask.make(from: schedule)
             obj.scheduleMask = Int16(mask)
 
@@ -120,8 +120,7 @@ extension TrackerStore {
             let cat = try self.categoryStore.ensureCategory(title: categoryTitle, in: ctx)
             obj.category = cat
 
-            // 5) сохранение сделает CoreDataStack.performBackgroundTask
-            // и изменения прилетят во viewContext (automaticallyMergesChangesFromParent = true)
+      
         }
     }
 }

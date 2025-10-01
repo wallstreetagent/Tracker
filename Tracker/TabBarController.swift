@@ -9,7 +9,7 @@ import UIKit
 
 final class TabBarController: UITabBarController {
 
-    // зависимости, чтобы передать их во вкладки
+
     private let coreDataStack: CoreDataStack
     private let trackersProvider: TrackersProvider
 
@@ -26,7 +26,7 @@ final class TabBarController: UITabBarController {
     }
 
     private func setupTabs() {
-        // --- Трекеры (с «зайчиком» как у тебя было)
+     
         let trackersVC = TrackersViewController(coreDataStack: coreDataStack, provider: trackersProvider)
         let trackersNC = UINavigationController(rootViewController: trackersVC)
         trackersNC.tabBarItem = UITabBarItem(
@@ -35,7 +35,7 @@ final class TabBarController: UITabBarController {
             selectedImage: UIImage(named: "tab_trackers_selected")?.withRenderingMode(.alwaysOriginal)
         )
 
-        // --- Статистика
+  
         let statsVC = StatisticsViewController()
         let statsNC = UINavigationController(rootViewController: statsVC)
         statsNC.tabBarItem = UITabBarItem(

@@ -8,7 +8,7 @@
 import UIKit
 
 public extension UIColor {
-    /// Инициализатор из HEX-строки. Поддерживает "#RRGGBB" и "RRGGBB".
+    
     convenience init?(hex: String) {
         var s = hex.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
         if s.hasPrefix("#") { s.removeFirst() }
