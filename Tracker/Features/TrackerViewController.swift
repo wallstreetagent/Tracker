@@ -120,10 +120,19 @@ final class TrackersViewController: UIViewController {
             DispatchQueue.main.async { self?.reloadSnapshot() }
         }
     }
+    
+    override func viewDidAppear(_ animated: Bool) {
+            super.viewDidAppear(animated)
+            AnalyticsService.shared.send(event: .open, screen: .main, item: nil)
+        }
+
+        override func viewDidDisappear(_ animated: Bool) {
+            super.viewDidDisappear(animated)
+            AnalyticsService.shared.send(event: .close, screen: .main, item: nil)
+        }
 
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
-        // Обновляем нижние инкеты под фактическую высоту кнопки
         let extra = filterButton.isHidden ? 0 : (filterButton.bounds.height + 24)
         if collectionView.contentInset.bottom != extra {
             collectionView.contentInset.bottom = extra
@@ -202,10 +211,12 @@ final class TrackersViewController: UIViewController {
         chooser.delegate = self
         let nav = UINavigationController(rootViewController: chooser)
         nav.modalPresentationStyle = .formSheet
+        AnalyticsService.shared.send(event: .click, screen: .main, item: .addTrack)
         present(nav, animated: true)
     }
 
     @objc private func didTapFilters() {
+        AnalyticsService.shared.send(event: .click, screen: .main, item: .filter)
         let hasAnyTrackers = (try? provider.snapshot(for: currentDate, query: ""))?
             .contains(where: { !$0.trackers.isEmpty }) ?? false
         guard hasAnyTrackers else { return }
@@ -430,6 +441,7 @@ extension TrackersViewController: UICollectionViewDataSource, UICollectionViewDe
     func trackerCellDidToggle(_ cell: TrackerCell) {
         guard let indexPath = collectionView.indexPath(for: cell) else { return }
         let tracker = filteredCategories[indexPath.section].trackers[indexPath.item]
+        AnalyticsService.shared.send(event: .click, screen: .main, item: .track)
         try? provider.toggleRecord(trackerId: tracker.id, on: currentDate)
         reloadSnapshot()
     }
@@ -624,6 +636,7 @@ extension TrackersViewController {
                 }
 
                 let edit = UIAction(title: "Редактировать") { [weak self] _ in
+                    AnalyticsService.shared.send(event: .click, screen: .main, item: .edit)
                     guard let self else { return }
                     let t = self.tracker(at: indexPath)
                     let categoryTitle = self.filteredCategories[indexPath.section].title
@@ -642,6 +655,7 @@ extension TrackersViewController {
                     title: "Удалить",
                     attributes: [.destructive]
                 ) { _ in
+                    AnalyticsService.shared.send(event: .click, screen: .main, item: .delete)
                     self.confirmDelete(tracker: t, indexPath: indexPath)
                 }
 

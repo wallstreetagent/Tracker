@@ -6,7 +6,7 @@
 //
 
 import Foundation
-@testable import YourAppModuleName
+@testable import Tracker
 
 final class StubTrackersProvider: TrackersProvider {
     var onChange: (() -> Void)?
