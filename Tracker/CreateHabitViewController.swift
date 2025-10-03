@@ -17,7 +17,6 @@ protocol CreateHabitDelegate: AnyObject {
                               emoji: String,
                               categoryTitle: String)
 
- 
     func editHabitDidFinish(id: UUID,
                             name: String,
                             schedule: Set<Weekday>,
@@ -25,16 +24,6 @@ protocol CreateHabitDelegate: AnyObject {
                             emoji: String,
                             categoryTitle: String)
 }
-
-
-// extension CreateHabitDelegate {
-//    func editHabitDidFinish(id: UUID,
-//                            name: String,
-//                            schedule: Set<Weekday>,
- //                           colorHex: String,
-//                            emoji: String,
-//                            categoryTitle: String) {}
-//}
 
 // MARK: - VC
 
@@ -47,7 +36,6 @@ final class CreateHabitViewController: UIViewController {
     private let coreDataStack: CoreDataStack
     private let mode: TrackerType
 
-  
     private var editingContext: (tracker: Tracker, categoryTitle: String)?
 
     init(coreDataStack: CoreDataStack,
@@ -59,8 +47,6 @@ final class CreateHabitViewController: UIViewController {
         super.init(nibName: nil, bundle: nil)
     }
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
-    
-    
 
     // MARK: - State
     private var selectedSchedule = Set<Weekday>()
@@ -123,7 +109,7 @@ final class CreateHabitViewController: UIViewController {
     private let titleLabel: UILabel = {
         let l = UILabel()
         l.text = "Новая привычка"
-        l.font = .systemFont(ofSize: 16)
+        l.font = .systemFont(ofSize: 16, weight: .semibold)
         return l
     }()
 
@@ -150,16 +136,15 @@ final class CreateHabitViewController: UIViewController {
 
     private let settingsTableView: UITableView = {
         let tv = UITableView(frame: .zero, style: .plain)
-        tv.register(UITableViewCell.self, forCellReuseIdentifier: "settingsCell")
+        tv.register(SettingsCell.self, forCellReuseIdentifier: SettingsCell.reuseId)
         tv.rowHeight = 75
         tv.isScrollEnabled = false
-        tv.backgroundColor = .clear          
+        tv.separatorStyle = .none
+        tv.backgroundColor = .clear
         tv.layer.cornerRadius = 0
         tv.clipsToBounds = false
-        tv.separatorInset = UIEdgeInsets(top: 0, left: 16, bottom: 0, right: 16)
         return tv
     }()
-
 
     private lazy var cancelButton: UIButton = {
         let b = UIButton(type: .system)
@@ -218,7 +203,8 @@ final class CreateHabitViewController: UIViewController {
 
         settingsTableView.delegate = self
         settingsTableView.dataSource = self
-        settingsTableView.backgroundColor = .clear
+        settingsTableView.tableFooterView = UIView()
+        settingsTableView.tableHeaderView = UIView()
 
         emojiCollection.register(EmojiCell.self, forCellWithReuseIdentifier: EmojiCell.reuseId)
         emojiCollection.dataSource = self
@@ -239,15 +225,15 @@ final class CreateHabitViewController: UIViewController {
 
         // Режим: редактирование/создание
         if let ctx = editingContext {
-            title = "Редактировать трекер"
-            nameTextField.text     = ctx.tracker.name
-            selectedEmoji          = ctx.tracker.emoji
-            selectedColorHex       = ctx.tracker.colorHex
-            selectedSchedule       = ctx.tracker.schedule
-            selectedCategoryTitle  = ctx.categoryTitle
+            titleLabel.text          = "Редактировать трекер"
+            nameTextField.text       = ctx.tracker.name
+            selectedEmoji            = ctx.tracker.emoji
+            selectedColorHex         = ctx.tracker.colorHex
+            selectedSchedule         = ctx.tracker.schedule
+            selectedCategoryTitle    = ctx.categoryTitle
             createButton.setTitle("Сохранить", for: .normal)
         } else {
-            title = (mode == .habit) ? "Новая привычка" : "Новое нерегулярное событие"
+            titleLabel.text = (mode == .habit) ? "Новая привычка" : "Новое нерегулярное событие"
         }
 
         settingsTableView.reloadData()
@@ -317,7 +303,7 @@ final class CreateHabitViewController: UIViewController {
 
             settingsTableView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
             settingsTableView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
-            settingsTableView.heightAnchor.constraint(equalToConstant: 150),
+            settingsTableView.heightAnchor.constraint(equalToConstant: (mode == .habit ? 150 : 75)),
 
             // Emoji
             emojiTitle.topAnchor.constraint(equalTo: settingsTableView.bottomAnchor, constant: 24),
@@ -385,7 +371,6 @@ final class CreateHabitViewController: UIViewController {
 
     @objc private func cancel() { dismiss(animated: true) }
 
-  
     @objc private func create() {
         guard isCreateButtonEnabled,
               let name = nameTextField.text?.trimmingCharacters(in: .whitespacesAndNewlines),
@@ -394,12 +379,9 @@ final class CreateHabitViewController: UIViewController {
         let category = selectedCategoryTitle
         let colorHex = selectedColorHex
         let emoji = selectedEmoji
-
-     
         let scheduleToSave: Set<Weekday> = (mode == .habit) ? selectedSchedule : Set<Weekday>()
 
         if let ctx = editingContext {
-            // РЕДАКТИРОВАНИЕ
             delegate?.editHabitDidFinish(id: ctx.tracker.id,
                                          name: name,
                                          schedule: scheduleToSave,
@@ -407,7 +389,6 @@ final class CreateHabitViewController: UIViewController {
                                          emoji: emoji,
                                          categoryTitle: category)
         } else {
-            // СОЗДАНИЕ
             delegate?.createHabitDidFinish(name: name,
                                            schedule: scheduleToSave,
                                            colorHex: colorHex,
@@ -470,43 +451,32 @@ extension CreateHabitViewController: UITableViewDelegate {
 
 extension CreateHabitViewController: UITableViewDataSource {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-     
-        return (mode == .habit) ? SettingsRow.allCases.count : 1
+        (mode == .habit) ? SettingsRow.allCases.count : 1
     }
 
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cell = tableView.dequeueReusableCell(withIdentifier: "settingsCell", for: indexPath)
+        let cell = tableView.dequeueReusableCell(withIdentifier: SettingsCell.reuseId, for: indexPath) as! SettingsCell
         let row = SettingsRow(rawValue: indexPath.row)
 
-        var config = cell.defaultContentConfiguration()
-        config.text = row?.title
-        config.textProperties.font = .systemFont(ofSize: 17)
+        let rows = tableView.numberOfRows(inSection: indexPath.section)
+        let position: SettingsCell.GroupPosition = (rows == 1) ? .single
+            : (indexPath.row == 0 ? .first
+            : (indexPath.row == rows - 1 ? .last : .middle))
 
+        let title = row?.title ?? ""
+        let value: String?
         if row == .category {
-            config.secondaryText = selectedCategoryTitle
-            config.secondaryTextProperties.color = .systemGray3
-            config.secondaryTextProperties.font = .systemFont(ofSize: 17)
-        }
-
-        if row == .schedule, !selectedSchedule.isEmpty {
-            config.secondaryText = scheduleSummary(selectedSchedule)
-            config.secondaryTextProperties.color = .systemGray3
-            config.secondaryTextProperties.font = .systemFont(ofSize: 17)
-        }
-
-        cell.contentConfiguration = config
-        cell.accessoryType = .disclosureIndicator
-        cell.backgroundColor = .ypBackground
-
-        // скрыть разделитель у последней
-        let rowsCount = self.tableView(tableView, numberOfRowsInSection: indexPath.section)
-        if indexPath.row == rowsCount - 1 {
-            cell.separatorInset = UIEdgeInsets(top: 0, left: tableView.bounds.width, bottom: 0, right: 0)
+            value = selectedCategoryTitle
+        } else if row == .schedule, !selectedSchedule.isEmpty {
+            value = scheduleSummary(selectedSchedule)
         } else {
-            cell.separatorInset = UIEdgeInsets(top: 0, left: 16, bottom: 0, right: 16)
+            value = nil
         }
+
+        cell.configure(title: title, value: value, position: position)
         return cell
     }
+
 }
 
 // MARK: - UICollectionViewDataSource
@@ -616,6 +586,111 @@ private enum SettingsRow: Int, CaseIterable {
 
 // MARK: - Cells
 
+/// Карточная ячейка без accessoryType — фон тянется на всю ширину, «белых хвостов» не будет.
+private final class SettingsCell: UITableViewCell {
+    static let reuseId = "SettingsCell"
+
+    enum GroupPosition { case single, first, middle, last }
+
+    private let cardView: UIView = {
+        let v = UIView()
+        v.layer.cornerRadius = 16
+        v.layer.masksToBounds = true
+        v.backgroundColor = .systemGray6
+        return v
+    }()
+
+    private let titleLabel: UILabel = {
+        let l = UILabel()
+        l.font = .systemFont(ofSize: 17)
+        l.textColor = .label
+        return l
+    }()
+
+    private let valueLabel: UILabel = {
+        let l = UILabel()
+        l.font = .systemFont(ofSize: 17)
+        l.textColor = .systemGray3
+        l.textAlignment = .right
+        l.setContentCompressionResistancePriority(.required, for: .horizontal)
+        return l
+    }()
+
+    private let separator: UIView = {
+        let v = UIView()
+        v.backgroundColor = .separator
+        v.isHidden = true
+        return v
+    }()
+
+    override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
+        super.init(style: style, reuseIdentifier: reuseIdentifier)
+        backgroundColor = .clear
+        contentView.backgroundColor = .clear
+        selectionStyle = .none
+
+        contentView.addSubview(cardView)
+        cardView.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            cardView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
+            cardView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
+            cardView.topAnchor.constraint(equalTo: contentView.topAnchor),
+            cardView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor)
+        ])
+
+        [titleLabel, valueLabel, separator].forEach {
+            $0.translatesAutoresizingMaskIntoConstraints = false
+            cardView.addSubview($0)
+        }
+
+        NSLayoutConstraint.activate([
+            titleLabel.leadingAnchor.constraint(equalTo: cardView.leadingAnchor, constant: 16),
+            titleLabel.centerYAnchor.constraint(equalTo: cardView.centerYAnchor),
+
+            valueLabel.trailingAnchor.constraint(equalTo: cardView.trailingAnchor, constant: -16),
+            valueLabel.centerYAnchor.constraint(equalTo: cardView.centerYAnchor),
+            valueLabel.leadingAnchor.constraint(greaterThanOrEqualTo: titleLabel.trailingAnchor, constant: 8),
+
+            separator.heightAnchor.constraint(equalToConstant: 0.5),
+            separator.leadingAnchor.constraint(equalTo: cardView.leadingAnchor, constant: 16),
+            separator.trailingAnchor.constraint(equalTo: cardView.trailingAnchor, constant: -16),
+            separator.bottomAnchor.constraint(equalTo: cardView.bottomAnchor)
+        ])
+    }
+
+    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+
+    override func prepareForReuse() {
+        super.prepareForReuse()
+        titleLabel.text = nil
+        valueLabel.text = nil
+        separator.isHidden = true
+    }
+
+    func configure(title: String, value: String?, position: GroupPosition) {
+        titleLabel.text = title
+        valueLabel.text = value
+
+        // Скругляем углы в зависимости от позиции
+        if #available(iOS 11.0, *) {
+            switch position {
+            case .single:
+                cardView.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner,
+                                                .layerMinXMaxYCorner, .layerMaxXMaxYCorner]
+            case .first:
+                cardView.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
+            case .middle:
+                cardView.layer.maskedCorners = []
+            case .last:
+                cardView.layer.maskedCorners = [.layerMinXMaxYCorner, .layerMaxXMaxYCorner]
+            }
+        }
+        // Разделитель рисуем внизу для всех, кроме последней/единственной
+        separator.isHidden = (position == .last || position == .single)
+    }
+}
+
+
 private final class EmojiCell: UICollectionViewCell {
     static let reuseId = "EmojiCell"
 
@@ -676,3 +751,5 @@ private final class ColorCell: UICollectionViewCell {
         layer.borderColor = selected ? UIColor.white.cgColor : UIColor.clear.cgColor
     }
 }
+
+
