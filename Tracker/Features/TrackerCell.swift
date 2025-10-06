@@ -143,11 +143,11 @@ final class TrackerCell: UICollectionViewCell {
     }
 
     private func neutralizePressEffects() {
-        // Сбрасываем любые возможные трансформации
+      
         contentView.transform = .identity
         transform = .identity
         layer.transform = CATransform3DIdentity
-        // Обновляем лейаут без анимации, чтобы исключить «подпрыгивания»
+    
         UIView.performWithoutAnimation {
             contentView.layoutIfNeeded()
         }

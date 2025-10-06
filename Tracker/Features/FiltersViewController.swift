@@ -79,7 +79,7 @@ final class FiltersViewController: UIViewController, UITableViewDataSource, UITa
             : (indexPath.row == 0 ? .first
             : (indexPath.row == rows - 1 ? .last : .middle))
 
-        // Если по ТЗ не нужно показывать галочку для .all / .today — просто поменяй условие здесь.
+       
         let checked = (opt == current)
 
         cell.configure(title: opt.title, checked: checked, position: position)

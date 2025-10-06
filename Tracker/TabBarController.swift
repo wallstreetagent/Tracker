@@ -25,26 +25,36 @@ final class TabBarController: UITabBarController {
     }
 
     private func setupTabs() {
+        
         let trackersVC = TrackersViewController(coreDataStack: coreDataStack, provider: trackersProvider)
         let trackersNC = UINavigationController(rootViewController: trackersVC)
-        trackersNC.tabBarItem = UITabBarItem(
-            title: "Трекеры",
-            image: UIImage(named: "tab_trackers_selected")?.withRenderingMode(.alwaysOriginal),
-            selectedImage: UIImage(named: "tab_trackers_selected")?.withRenderingMode(.alwaysOriginal)
-        )
 
         let statsProvider = StatisticsProviderCoreData(stack: coreDataStack)
         let statsVC = StatisticsViewController(provider: statsProvider)
         let statsNC = UINavigationController(rootViewController: statsVC)
+
+       
+        let record = UIImage(named: "record")?.withRenderingMode(.alwaysTemplate)
+        let bunny  = UIImage(named: "blue_b")?.withRenderingMode(.alwaysTemplate)
+
+        trackersNC.tabBarItem = UITabBarItem(
+            title: "Трекеры",
+            image: record,
+            selectedImage: record
+        )
+
         statsNC.tabBarItem = UITabBarItem(
             title: "Статистика",
-            image: UIImage(named: "tab_statistics")?.withRenderingMode(.alwaysOriginal),
-            selectedImage: UIImage(named: "tab_statistics")?.withRenderingMode(.alwaysOriginal)
+            image: bunny,
+            selectedImage: bunny
         )
 
         viewControllers = [trackersNC, statsNC]
 
-        tabBar.tintColor = .ypBlackDay
+     
+        tabBar.tintColor = .systemBlue
+        tabBar.unselectedItemTintColor = .systemGray2
+
         if #available(iOS 15.0, *) {
             let ap = UITabBarAppearance()
             ap.configureWithOpaqueBackground()
@@ -53,4 +63,5 @@ final class TabBarController: UITabBarController {
             tabBar.scrollEdgeAppearance = ap
         }
     }
+
 }

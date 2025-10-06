@@ -100,23 +100,21 @@ extension TrackerStore {
                 categoryTitle: String) throws {
 
         try stack.performBackgroundTask { ctx in
-            // 1) найти объект
+         
             let req: NSFetchRequest<TrackerCoreData> = TrackerCoreData.fetchRequest()
             req.predicate = NSPredicate(format: "id == %@", id as CVarArg)
             req.fetchLimit = 1
 
             guard let obj = try ctx.fetch(req).first else { return }
 
-            // 2) обновить поля
+        
             obj.name = name
             obj.emoji = emoji
             obj.colorHex = colorHex
 
-            // 3)
             let mask = WeekdayMask.make(from: schedule)
             obj.scheduleMask = Int16(mask)
 
-            // 4) категория
             let cat = try self.categoryStore.ensureCategory(title: categoryTitle, in: ctx)
             obj.category = cat
 

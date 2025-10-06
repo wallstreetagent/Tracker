@@ -257,15 +257,15 @@ final class TrackersViewController: UIViewController {
         categories = (try? provider.snapshot(for: currentDate, query: query)) ?? []
         rebuildCompletedTodaySet()
 
-        // Базовый список (поиск/дата уже учтены снапшотом провайдера)
+    
         var working = categories
 
-        // 1) Применяем доп. фильтр
+ 
         switch activeFilter {
         case .all:
             break
         case .today:
-            // today = переключиться на сегодня и сбросить фильтр (по ТЗ)
+    
             let today = Calendar.current.startOfDay(for: Date())
             if currentDate != today {
                 currentDate = today
@@ -290,19 +290,19 @@ final class TrackersViewController: UIViewController {
         filteredCategories = working
         collectionView.reloadData()
 
-        // 2) Плейсхолдеры/видимость кнопки
+    
         let hasAnyTrackers = (try? provider.snapshot(for: currentDate, query: ""))?
             .contains(where: { !$0.trackers.isEmpty }) ?? false
 
         let hasResults = filteredCategories.contains { !$0.trackers.isEmpty }
 
-        // Если нет трекеров на выбранный день — кнопку скрыть
+       
         filterButton.isHidden = !hasAnyTrackers
 
         if !hasAnyTrackers {
             showPlaceholder(imageNamed: "placeholderStar", text: "Что будем отслеживать?")
         } else if (!query.isEmpty || !activeFilter.isReset) && !hasResults {
-            // Ничего по поиску ИЛИ по текущему фильтру
+          
             showPlaceholder(imageNamed: "nothing", text: "Ничего не найдено")
         } else {
             hidePlaceholder()
@@ -310,7 +310,7 @@ final class TrackersViewController: UIViewController {
 
         updateFilterButtonAppearance()
 
-        // Пересчитать нижние инкеты, если изменилась видимость кнопки
+
         view.setNeedsLayout()
     }
 
@@ -501,7 +501,7 @@ extension TrackersViewController: ChooseTrackerTypeDelegate {
 extension TrackersViewController: FiltersViewControllerDelegate {
     func filtersViewController(_ vc: FiltersViewController, didPick option: FilterOption) {
         activeFilter = option
-        // .today внутри reloadSnapshot переключит дату и сбросит фильтр до .all
+  
         reloadSnapshot()
     }
 }
@@ -521,7 +521,7 @@ extension TrackersViewController {
             let cell = collectionView.cellForItem(at: ns as IndexPath) as? TrackerCell
         else { return nil }
 
-        // Берём именно внутреннюю карточку ячейки
+      
         let view = cell.contextTargetView
 
         let params = UIPreviewParameters()
@@ -531,7 +531,7 @@ extension TrackersViewController {
             cornerRadius: cell.contextCornerRadius
         )
 
-        // Никаких кастомных target/VC — система «поднимет» саму карточку
+  
         return UITargetedPreview(view: view, parameters: params)
     }
 
@@ -545,8 +545,7 @@ extension TrackersViewController {
         makeCellPreview(for: configuration)
     }
 
-    // Эти два больше не нужны — удаляем, чтобы не мешали системной анимации
-    // willDisplayContextMenu / willEndContextMenuInteraction — УДАЛИТЬ из проекта
+
 
     func collectionView(_ collectionView: UICollectionView,
                         contextMenuConfigurationForItemAt indexPath: IndexPath,
@@ -556,7 +555,7 @@ extension TrackersViewController {
 
         return UIContextMenuConfiguration(
             identifier: indexPath as NSIndexPath,
-            previewProvider: nil,                 // <— ключ: не создаём свой VC
+            previewProvider: nil,                
             actionProvider: { [weak self] _ in
                 guard let self else { return UIMenu() }
 

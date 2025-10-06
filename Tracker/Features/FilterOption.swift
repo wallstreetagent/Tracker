@@ -22,7 +22,7 @@ enum FilterOption: CaseIterable {
         }
     }
 
-    /// Эти варианты считаются «сбросом» (галочку не показываем и визуально фильтр не активен)
+  
     var isReset: Bool {
         self == .all || self == .today
     }

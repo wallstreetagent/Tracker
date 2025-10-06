@@ -39,7 +39,7 @@ final class EmptyStateView: UIView {
         NSLayoutConstraint.activate([
             stack.centerXAnchor.constraint(equalTo: centerXAnchor),
             stack.centerYAnchor.constraint(equalTo: centerYAnchor),
-            // чтобы размер эмодзи был как в макете
+
             imageView.widthAnchor.constraint(equalToConstant: 80),
             imageView.heightAnchor.constraint(equalToConstant: 80)
         ])

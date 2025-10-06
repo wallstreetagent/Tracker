@@ -47,7 +47,7 @@ public extension Weekday {
 }
 
 public extension Weekday {
-    /// Полное название для UI ("Понедельник")
+  
     var fullName: String {
         switch self {
         case .mon: return "Понедельник"
@@ -60,7 +60,7 @@ public extension Weekday {
         }
     }
 
-    /// Короткое название ("Пн", "Вт" и т.д.)
+
     var shortName: String {
         switch self {
         case .mon: return "Пн"

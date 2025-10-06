@@ -39,7 +39,7 @@ final class TrackersProviderCoreData: TrackersProvider {
         let filtered = items.filter { pair in
             let t = pair.tracker
             let mask = WeekdayMask.make(from: t.schedule)
-            let byDay  = mask == 0 || t.schedule.contains(weekday) // нерегулярные проходят всегда
+            let byDay  = mask == 0 || t.schedule.contains(weekday) 
             let byText = q.isEmpty || t.name.lowercased().contains(q)
             return byDay && byText
         }

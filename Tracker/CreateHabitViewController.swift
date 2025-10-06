@@ -5,7 +5,7 @@
 //  Created by Yanye Velikanova on 8/20/25.
 //
 
-
+import CoreData
 import UIKit
 
 // MARK: - Delegate
@@ -29,10 +29,10 @@ protocol CreateHabitDelegate: AnyObject {
 
 final class CreateHabitViewController: UIViewController {
 
-    // External
+
     weak var delegate: CreateHabitDelegate?
 
-    // Deps
+    private lazy var recordStore = TrackerRecordStore(stack: coreDataStack)
     private let coreDataStack: CoreDataStack
     private let mode: TrackerType
 
@@ -113,6 +113,16 @@ final class CreateHabitViewController: UIViewController {
         return l
     }()
 
+   
+    private let daysLabel: UILabel = {
+        let l = UILabel()
+        l.textAlignment = .center
+        l.font = .systemFont(ofSize: 34, weight: .bold)
+        l.textColor = .label
+        l.isHidden = true
+        return l
+    }()
+
     private lazy var nameTextField: CustomTextField = {
         let tf = CustomTextField()
         tf.font = .systemFont(ofSize: 17)
@@ -177,6 +187,10 @@ final class CreateHabitViewController: UIViewController {
         }
     }
 
+ 
+    private var nameTopToTitle: NSLayoutConstraint?
+    private var nameTopToDays: NSLayoutConstraint?
+
     private var tableTopToLabel: NSLayoutConstraint?
     private var tableTopToTextField: NSLayoutConstraint?
 
@@ -195,7 +209,7 @@ final class CreateHabitViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        // Общий сетап
+  
         scrollView.contentInsetAdjustmentBehavior = .never
         view.backgroundColor = .ypWhiteDay
 
@@ -223,7 +237,7 @@ final class CreateHabitViewController: UIViewController {
 
         layoutUI()
 
-        // Режим: редактирование/создание
+   
         if let ctx = editingContext {
             titleLabel.text          = "Редактировать трекер"
             nameTextField.text       = ctx.tracker.name
@@ -232,8 +246,18 @@ final class CreateHabitViewController: UIViewController {
             selectedSchedule         = ctx.tracker.schedule
             selectedCategoryTitle    = ctx.categoryTitle
             createButton.setTitle("Сохранить", for: .normal)
+
+          
+            let done = completedDaysCount(for: ctx.tracker.id)
+            daysLabel.text = pluralizedDays(done)
+            daysLabel.isHidden = false
+            nameTopToTitle?.isActive = false
+            nameTopToDays?.isActive  = true
         } else {
             titleLabel.text = (mode == .habit) ? "Новая привычка" : "Новое нерегулярное событие"
+            daysLabel.isHidden = true
+            nameTopToDays?.isActive  = false
+            nameTopToTitle?.isActive = true
         }
 
         settingsTableView.reloadData()
@@ -278,12 +302,17 @@ final class CreateHabitViewController: UIViewController {
             contentView.heightAnchor.constraint(greaterThanOrEqualTo: scrollView.frameLayoutGuide.heightAnchor)
         ])
 
-        [titleLabel, nameTextField, limitLabel, settingsTableView,
+        [titleLabel, daysLabel, nameTextField, limitLabel, settingsTableView,
          emojiTitle, emojiCollection, colorTitle, colorCollection,
          cancelButton, createButton].forEach {
             $0.translatesAutoresizingMaskIntoConstraints = false
             contentView.addSubview($0)
         }
+
+     
+        nameTopToTitle = nameTextField.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 38)
+        nameTopToDays  = nameTextField.topAnchor.constraint(equalTo: daysLabel.bottomAnchor, constant: 24)
+        nameTopToTitle?.isActive = true
 
         tableTopToLabel = settingsTableView.topAnchor.constraint(equalTo: limitLabel.bottomAnchor, constant: 32)
         tableTopToTextField = settingsTableView.topAnchor.constraint(equalTo: nameTextField.bottomAnchor, constant: 24)
@@ -293,7 +322,11 @@ final class CreateHabitViewController: UIViewController {
             titleLabel.centerXAnchor.constraint(equalTo: contentView.centerXAnchor),
             titleLabel.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 20),
 
-            nameTextField.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 38),
+      
+            daysLabel.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 12),
+            daysLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
+            daysLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
+
             nameTextField.heightAnchor.constraint(equalToConstant: 75),
             nameTextField.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
             nameTextField.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
@@ -359,6 +392,23 @@ final class CreateHabitViewController: UIViewController {
         tableTopToLabel?.isActive = show
         UIView.animate(withDuration: 0.25) { self.view.layoutIfNeeded() }
     }
+
+
+    private func pluralizedDays(_ n: Int) -> String {
+        let r100 = n % 100, r10 = n % 10
+        let word: String
+        if (11...14).contains(r100) { word = "дней" }
+        else if r10 == 1 { word = "день" }
+        else if (2...4).contains(r10) { word = "дня" }
+        else { word = "дней" }
+        return "\(n) \(word)"
+    }
+
+
+    private func completedDaysCount(for id: UUID) -> Int {
+        return (try? recordStore.totalDays(for: id)) ?? 0
+    }
+
 
     // MARK: - Actions
 
@@ -476,7 +526,6 @@ extension CreateHabitViewController: UITableViewDataSource {
         cell.configure(title: title, value: value, position: position)
         return cell
     }
-
 }
 
 // MARK: - UICollectionViewDataSource
@@ -586,7 +635,7 @@ private enum SettingsRow: Int, CaseIterable {
 
 // MARK: - Cells
 
-/// Карточная ячейка без accessoryType — фон тянется на всю ширину, «белых хвостов» не будет.
+
 private final class SettingsCell: UITableViewCell {
     static let reuseId = "SettingsCell"
 
@@ -671,7 +720,7 @@ private final class SettingsCell: UITableViewCell {
         titleLabel.text = title
         valueLabel.text = value
 
-        // Скругляем углы в зависимости от позиции
+
         if #available(iOS 11.0, *) {
             switch position {
             case .single:
@@ -685,11 +734,10 @@ private final class SettingsCell: UITableViewCell {
                 cardView.layer.maskedCorners = [.layerMinXMaxYCorner, .layerMaxXMaxYCorner]
             }
         }
-        // Разделитель рисуем внизу для всех, кроме последней/единственной
+    
         separator.isHidden = (position == .last || position == .single)
     }
 }
-
 
 private final class EmojiCell: UICollectionViewCell {
     static let reuseId = "EmojiCell"
