@@ -12,6 +12,8 @@ protocol TrackerCellDelegate: AnyObject {
 }
 
 final class TrackerCell: UICollectionViewCell {
+    var contextTargetView: UIView { cardView }
+    var contextCornerRadius: CGFloat { 16 }
     static let reuseIdentifier = "TrackerCell"
     weak var delegate: TrackerCellDelegate?
 

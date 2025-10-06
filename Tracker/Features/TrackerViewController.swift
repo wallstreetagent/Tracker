@@ -506,7 +506,7 @@ extension TrackersViewController: FiltersViewControllerDelegate {
     }
 }
 
-// MARK: - Context menu animations
+// MARK: - Context menu (подсвечивается только карточка)
 extension TrackersViewController {
 
     func collectionView(_ collectionView: UICollectionView,
@@ -515,98 +515,38 @@ extension TrackersViewController {
     func collectionView(_ collectionView: UICollectionView,
                         shouldSelectItemAt indexPath: IndexPath) -> Bool { false }
 
-    private func makeBannerPreview(for configuration: UIContextMenuConfiguration) -> UITargetedPreview? {
-        guard let ns = configuration.identifier as? NSIndexPath else { return nil }
-        let indexPath = ns as IndexPath
+    private func makeCellPreview(for configuration: UIContextMenuConfiguration) -> UITargetedPreview? {
+        guard
+            let ns = configuration.identifier as? NSIndexPath,
+            let cell = collectionView.cellForItem(at: ns as IndexPath) as? TrackerCell
+        else { return nil }
 
-        let t = tracker(at: indexPath)
-        let color = UIColor(hex: t.colorHex) ?? .systemOrange
+        // Берём именно внутреннюю карточку ячейки
+        let view = cell.contextTargetView
 
-        let size = TrackerContextPreviewViewController.targetSize
-        let banner = UIView(frame: CGRect(origin: .zero, size: size))
-        banner.backgroundColor = .clear
-        let container = UIView(frame: banner.bounds)
-        container.autoresizingMask = [.flexibleWidth, .flexibleHeight]
-        container.backgroundColor = color
-        container.layer.cornerRadius = 16
-        container.layer.masksToBounds = true
-        banner.addSubview(container)
-
-        let emoji = UILabel()
-        emoji.text = t.emoji
-        emoji.font = .systemFont(ofSize: 22, weight: .regular)
-        emoji.setContentHuggingPriority(.required, for: .horizontal)
-
-        let title = UILabel()
-        title.text = t.name
-        title.textColor = .white
-        title.font = .systemFont(ofSize: 14, weight: .semibold)
-        title.numberOfLines = 2
-
-        let stack = UIStackView(arrangedSubviews: [emoji, title])
-        stack.axis = .horizontal
-        stack.alignment = .center
-        stack.spacing = 10
-        stack.isLayoutMarginsRelativeArrangement = true
-        stack.layoutMargins = UIEdgeInsets(top: 10, left: 12, bottom: 10, right: 12)
-        stack.translatesAutoresizingMaskIntoConstraints = false
-        container.addSubview(stack)
-        NSLayoutConstraint.activate([
-            stack.leadingAnchor.constraint(equalTo: container.leadingAnchor),
-            stack.trailingAnchor.constraint(equalTo: container.trailingAnchor),
-            stack.topAnchor.constraint(equalTo: container.topAnchor),
-            stack.bottomAnchor.constraint(equalTo: container.bottomAnchor)
-        ])
-
-        guard let attrs = collectionView.layoutAttributesForItem(at: indexPath) else {
-            return UITargetedPreview(view: banner)
-        }
-        let cellFrame = attrs.frame
-        let center = CGPoint(x: cellFrame.midX, y: cellFrame.minY + 36)
-
-        let target = UIPreviewTarget(container: collectionView, center: center)
         let params = UIPreviewParameters()
         params.backgroundColor = .clear
-        params.visiblePath = UIBezierPath(roundedRect: CGRect(origin: .zero, size: size), cornerRadius: 16)
+        params.visiblePath = UIBezierPath(
+            roundedRect: view.bounds,
+            cornerRadius: cell.contextCornerRadius
+        )
 
-        return UITargetedPreview(view: banner, parameters: params, target: target)
+        // Никаких кастомных target/VC — система «поднимет» саму карточку
+        return UITargetedPreview(view: view, parameters: params)
     }
 
     func collectionView(_ collectionView: UICollectionView,
                         previewForHighlightingContextMenuWithConfiguration configuration: UIContextMenuConfiguration) -> UITargetedPreview? {
-        makeBannerPreview(for: configuration)
+        makeCellPreview(for: configuration)
     }
 
     func collectionView(_ collectionView: UICollectionView,
                         previewForDismissingContextMenuWithConfiguration configuration: UIContextMenuConfiguration) -> UITargetedPreview? {
-        makeBannerPreview(for: configuration)
+        makeCellPreview(for: configuration)
     }
 
-    func collectionView(_ collectionView: UICollectionView,
-                        willDisplayContextMenu configuration: UIContextMenuConfiguration,
-                        animator: UIContextMenuInteractionAnimating?) {
-        animator?.addAnimations {
-            if let ns = configuration.identifier as? NSIndexPath,
-               let cell = collectionView.cellForItem(at: ns as IndexPath) {
-                cell.transform = .identity
-                cell.contentView.transform = .identity
-                cell.layer.transform = CATransform3DIdentity
-            }
-        }
-    }
-
-    func collectionView(_ collectionView: UICollectionView,
-                        willEndContextMenuInteraction configuration: UIContextMenuConfiguration,
-                        animator: UIContextMenuInteractionAnimating?) {
-        animator?.addAnimations {
-            if let ns = configuration.identifier as? NSIndexPath,
-               let cell = collectionView.cellForItem(at: ns as IndexPath) {
-                cell.transform = .identity
-                cell.contentView.transform = .identity
-                cell.layer.transform = CATransform3DIdentity
-            }
-        }
-    }
+    // Эти два больше не нужны — удаляем, чтобы не мешали системной анимации
+    // willDisplayContextMenu / willEndContextMenuInteraction — УДАЛИТЬ из проекта
 
     func collectionView(_ collectionView: UICollectionView,
                         contextMenuConfigurationForItemAt indexPath: IndexPath,
@@ -616,17 +556,7 @@ extension TrackersViewController {
 
         return UIContextMenuConfiguration(
             identifier: indexPath as NSIndexPath,
-            previewProvider: {
-                let t = self.tracker(at: indexPath)
-                let color = UIColor(hex: t.colorHex) ?? .systemOrange
-                let vc = TrackerContextPreviewViewController(
-                    emoji: t.emoji,
-                    text: t.name,
-                    color: color
-                )
-                vc.preferredContentSize = TrackerContextPreviewViewController.targetSize
-                return vc
-            },
+            previewProvider: nil,                 // <— ключ: не создаём свой VC
             actionProvider: { [weak self] _ in
                 guard let self else { return UIMenu() }
 
@@ -651,10 +581,7 @@ extension TrackersViewController {
                     self.present(nav, animated: true)
                 }
 
-                let delete = UIAction(
-                    title: "Удалить",
-                    attributes: [.destructive]
-                ) { _ in
+                let delete = UIAction(title: "Удалить", attributes: [.destructive]) { _ in
                     AnalyticsService.shared.send(event: .click, screen: .main, item: .delete)
                     self.confirmDelete(tracker: t, indexPath: indexPath)
                 }
