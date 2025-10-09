@@ -236,6 +236,16 @@ final class CreateHabitViewController: UIViewController {
         )
 
         layoutUI()
+        
+        titleLabel.textColor = .ypBlackDay
+
+            nameTextField.backgroundColor = .white
+            nameTextField.textColor = .black
+            nameTextField.tintColor = .ypBlue
+            nameTextField.attributedPlaceholder = NSAttributedString(
+                string: nameTextField.placeholder ?? "",
+                attributes: [.foregroundColor: UIColor.systemGray2]
+            )
 
    
         if let ctx = editingContext {

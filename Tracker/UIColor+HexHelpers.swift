@@ -8,7 +8,7 @@
 import UIKit
 
 public extension UIColor {
-    
+
     convenience init?(hex: String) {
         var s = hex.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
         if s.hasPrefix("#") { s.removeFirst() }
@@ -19,9 +19,17 @@ public extension UIColor {
         self.init(red: r, green: g, blue: b, alpha: 1.0)
     }
 
-  
-    static var ypWhiteDay: UIColor { .white }
-    static var ypBlackDay: UIColor { UIColor(hex: "#1A1B22") ?? .black }
-    static var ypBlue: UIColor { .systemBlue }
-    static var ypBackground: UIColor { .systemGray6 }
+
+    static var ypWhiteDay: UIColor { UIColor(named: "AppBackground") ?? .systemBackground }
+
+    static var ypBlackDay: UIColor { UIColor(named: "LabelPrimary") ?? .label }
+
+    static var ypBlue: UIColor { UIColor(named: "Accent") ?? .systemBlue }
+
+    static var ypBackground: UIColor { UIColor(named: "CardBackground") ?? .secondarySystemBackground }
+
+    static var appSeparator: UIColor { UIColor(named: "Separator") ?? .separator }
+  //   static var labelSecondary: UIColor { UIColor(named: "LabelSecondary") ?? .secondaryLabel }
+    // static var buttonPrimary: UIColor { UIColor(named: "ButtonPrimary") ?? .black }
+    static var brandBlue: UIColor { UIColor(named: "Accent") ?? UIColor(hex: "#3772E7") ?? .systemBlue }
 }

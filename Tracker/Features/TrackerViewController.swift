@@ -30,28 +30,33 @@ final class TrackersViewController: UIViewController {
     // MARK: - UI
     private let searchField: UISearchTextField = {
         let f = UISearchTextField()
-        f.placeholder = "Поиск"
+        f.attributedPlaceholder = NSAttributedString(
+            string: "Поиск",
+            attributes: [.foregroundColor: UIColor.secondaryLabel]
+        )
         f.returnKeyType = .done
-        f.backgroundColor = UIColor(white: 0.95, alpha: 1.0)
+        f.backgroundColor = .ypBackground
         f.layer.cornerRadius = 10
         f.layer.masksToBounds = true
         f.translatesAutoresizingMaskIntoConstraints = false
         return f
     }()
 
+
     private lazy var filterButton: UIButton = {
-        let b = UIButton(type: .system)
-        b.setTitle("Фильтры", for: .normal)
-        b.titleLabel?.font = .systemFont(ofSize: 17, weight: .semibold)
-        b.backgroundColor = .label.withAlphaComponent(0.9)
-        b.setTitleColor(.systemBackground, for: .normal)
-        b.layer.cornerRadius = 16
-        b.layer.masksToBounds = true
-        b.contentEdgeInsets = UIEdgeInsets(top: 10, left: 20, bottom: 10, right: 20)
-        b.translatesAutoresizingMaskIntoConstraints = false
-        b.addTarget(self, action: #selector(didTapFilters), for: .touchUpInside)
-        return b
-    }()
+         let b = UIButton(type: .system)
+         b.setTitle("Фильтры", for: .normal)
+         b.titleLabel?.font = .systemFont(ofSize: 17, weight: .semibold)
+         b.backgroundColor = .label.withAlphaComponent(0.9)
+         b.setTitleColor(.systemBackground, for: .normal)
+         b.layer.cornerRadius = 16
+         b.layer.masksToBounds = true
+         b.contentEdgeInsets = UIEdgeInsets(top: 10, left: 20, bottom: 10, right: 20)
+         b.translatesAutoresizingMaskIntoConstraints = false
+         b.addTarget(self, action: #selector(didTapFilters), for: .touchUpInside)
+         return b
+     }()
+
     private var filterButtonBottomConstraint: NSLayoutConstraint?
 
     private let placeholderImage: UIImageView = {
@@ -66,7 +71,7 @@ final class TrackersViewController: UIViewController {
         l.text = "Что будем отслеживать?"
         l.font = .systemFont(ofSize: 12)
         l.textAlignment = .center
-        l.textColor = UIColor(hex: "#1A1B22") ?? .black
+        l.textColor = .labelSecondary
         l.translatesAutoresizingMaskIntoConstraints = false
         return l
     }()
@@ -104,7 +109,8 @@ final class TrackersViewController: UIViewController {
         configureNavBar()
         layoutUI()
 
-        view.backgroundColor = .ypWhiteDay
+        let bg = UIColor(named: "AppBackground")
+        view.backgroundColor = bg
 
         searchField.delegate = self
         searchField.addTarget(self, action: #selector(searchChanged), for: .editingChanged)
@@ -151,7 +157,7 @@ final class TrackersViewController: UIViewController {
             target: self,
             action: #selector(didTapPlus)
         )
-        addButton.tintColor = .ypBlackDay
+        addButton.tintColor = .ypBlue
         navigationItem.leftBarButtonItem = addButton
         navigationItem.rightBarButtonItem = UIBarButtonItem(customView: navDatePicker)
     }
@@ -229,17 +235,20 @@ final class TrackersViewController: UIViewController {
 
     private func updateFilterButtonAppearance() {
         if activeFilter.isReset {
-            filterButton.backgroundColor = .label.withAlphaComponent(0.9)
-            filterButton.setTitleColor(.systemBackground, for: .normal)
+        
+            filterButton.backgroundColor = .brandBlue
+            filterButton.setTitleColor(.white, for: .normal)
             filterButton.layer.borderWidth = 0
             filterButton.layer.borderColor = nil
         } else {
+          
             filterButton.backgroundColor = .systemBackground
             filterButton.setTitleColor(.systemRed, for: .normal)
             filterButton.layer.borderWidth = 1
             filterButton.layer.borderColor = UIColor.systemRed.cgColor
         }
     }
+
 
     @objc private func dateChanged(_ sender: UIDatePicker) {
         currentDate = Calendar.current.startOfDay(for: sender.date)
