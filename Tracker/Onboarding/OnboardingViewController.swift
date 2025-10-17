@@ -21,7 +21,7 @@ final class OnboardingViewController: UIViewController, UIPageViewControllerData
         let p1 = OnboardingContentViewController(
             imageName: "onboarding1",
             title: "Отслеживайте только то, что хотите",
-            showsButton: false
+            showsButton: true
         )
         let p2 = OnboardingContentViewController(
             imageName: "onboarding2",

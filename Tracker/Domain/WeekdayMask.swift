@@ -8,7 +8,7 @@
 import Foundation
 
 enum WeekdayMask {
-    /// Битовая маска: Пн=бит0 … Вс=бит6
+  
     static func make(from set: Set<Weekday>) -> UInt16 {
         set.reduce(0) { acc, d in
             let bit: Int

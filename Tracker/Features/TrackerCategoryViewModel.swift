@@ -5,23 +5,31 @@
 //  Created by Yanye Velikanova on 9/19/25.
 //
 
+
 import Foundation
+
+// MARK: - TrackerCategoryViewModel
 
 final class TrackerCategoryViewModel {
 
-    // Outputs (биндинги)
+    // MARK: - Outputs (биндинги)
+    
     var onDataChanged: (() -> Void)?
     var onError: ((String) -> Void)?
     var onSelection: ((String) -> Void)?
 
-    // State
+    // MARK: - State
+    
     private(set) var selectedTitle: String?
     private var items: [TrackerCategoryViewItem] = [] { didSet { onDataChanged?() } }
 
-    // Deps
+    // MARK: - Dependencies
+    
     private let categoryStore: TrackerCategoryStoring
     private let counter: TrackerCounting
 
+    // MARK: - Init
+    
     init(categoryStore: TrackerCategoryStoring,
          counter: TrackerCounting,
          selectedTitle: String? = nil) {
@@ -32,8 +40,11 @@ final class TrackerCategoryViewModel {
         self.categoryStore.onChange = { [weak self] in self?.reload() }
     }
 
-    // Inputs
-    func viewDidLoad() { reload() }
+    // MARK: - Data Loading
+    
+    func viewDidLoad() {
+        reload()
+    }
 
     func reload() {
         do {
@@ -47,10 +58,14 @@ final class TrackerCategoryViewModel {
         }
     }
 
+    // MARK: - Table Helpers
+    
     func numberOfRows() -> Int { items.count }
     func item(at indexPath: IndexPath) -> TrackerCategoryViewItem { items[indexPath.row] }
     func title(at indexPath: IndexPath) -> String { items[indexPath.row].title }
 
+    // MARK: - User Actions
+    
     func select(at indexPath: IndexPath) {
         selectedTitle = items[indexPath.row].title
         if let selectedTitle { onSelection?(selectedTitle) }

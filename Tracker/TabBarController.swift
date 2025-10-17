@@ -9,7 +9,6 @@ import UIKit
 
 final class TabBarController: UITabBarController {
 
-    // зависимости, чтобы передать их во вкладки
     private let coreDataStack: CoreDataStack
     private let trackersProvider: TrackersProvider
 
@@ -26,28 +25,36 @@ final class TabBarController: UITabBarController {
     }
 
     private func setupTabs() {
-        // --- Трекеры (с «зайчиком» как у тебя было)
+        
         let trackersVC = TrackersViewController(coreDataStack: coreDataStack, provider: trackersProvider)
         let trackersNC = UINavigationController(rootViewController: trackersVC)
+
+        let statsProvider = StatisticsProviderCoreData(stack: coreDataStack)
+        let statsVC = StatisticsViewController(provider: statsProvider)
+        let statsNC = UINavigationController(rootViewController: statsVC)
+
+       
+        let record = UIImage(named: "record")?.withRenderingMode(.alwaysTemplate)
+        let bunny  = UIImage(named: "blue_b")?.withRenderingMode(.alwaysTemplate)
+
         trackersNC.tabBarItem = UITabBarItem(
-            title: "Трекеры",
-            image: UIImage(named: "tab_trackers_selected")?.withRenderingMode(.alwaysOriginal),
-            selectedImage: UIImage(named: "tab_trackers_selected")?.withRenderingMode(.alwaysOriginal)
+            title: NSLocalizedString("tab.trackers", comment: ""),
+            image: record,
+            selectedImage: record
         )
 
-        // --- Статистика
-        let statsVC = StatisticsViewController()
-        let statsNC = UINavigationController(rootViewController: statsVC)
         statsNC.tabBarItem = UITabBarItem(
-            title: "Статистика",
-            image: UIImage(named: "tab_statistics")?.withRenderingMode(.alwaysOriginal),
-            selectedImage: UIImage(named: "tab_statistics")?.withRenderingMode(.alwaysOriginal)
+            title: NSLocalizedString("tab.statistics", comment: ""),
+            image: bunny,
+            selectedImage: bunny
         )
 
         viewControllers = [trackersNC, statsNC]
 
-        // необязательно, просто чтобы фон и тинт не перекрашивали ваши PNG
-        tabBar.tintColor = .ypBlackDay
+     
+        tabBar.tintColor = .systemBlue
+        tabBar.unselectedItemTintColor = .systemGray2
+
         if #available(iOS 15.0, *) {
             let ap = UITabBarAppearance()
             ap.configureWithOpaqueBackground()
@@ -56,4 +63,5 @@ final class TabBarController: UITabBarController {
             tabBar.scrollEdgeAppearance = ap
         }
     }
+
 }
