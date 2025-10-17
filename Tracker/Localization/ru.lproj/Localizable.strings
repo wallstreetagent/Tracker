@@ -5,3 +5,17 @@
   Created by Yanye Velikanova on 10/17/25.
   
 */
+
+"trackers.title" = "Трекеры";
+"filters.title" = "Фильтры";
+"tab.trackers" = "Трекеры";
+"tab.statistics" = "Статистика";
+
+"search.placeholder" = "Поиск";
+"placeholder.empty" = "Что будем отслеживать?";
+"placeholder.nothing" = "Ничего не найдено";
+
+"filter.all" = "Все трекеры";
+"filter.today" = "Трекеры на сегодня";
+"filter.completed" = "Завершённые";
+"filter.uncompleted" = "Не завершённые";

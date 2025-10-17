@@ -31,9 +31,10 @@ final class TrackersViewController: UIViewController {
     private let searchField: UISearchTextField = {
         let f = UISearchTextField()
         f.attributedPlaceholder = NSAttributedString(
-            string: "Поиск",
+            string: NSLocalizedString("search.placeholder", comment: ""),
             attributes: [.foregroundColor: UIColor.secondaryLabel]
         )
+
         f.returnKeyType = .done
         f.backgroundColor = .ypBackground
         f.layer.cornerRadius = 10
@@ -45,7 +46,7 @@ final class TrackersViewController: UIViewController {
 
     private lazy var filterButton: UIButton = {
          let b = UIButton(type: .system)
-         b.setTitle("Фильтры", for: .normal)
+        b.setTitle(NSLocalizedString("filters.title", comment: ""), for: .normal)
          b.titleLabel?.font = .systemFont(ofSize: 17, weight: .semibold)
          b.backgroundColor = .label.withAlphaComponent(0.9)
          b.setTitleColor(.systemBackground, for: .normal)
@@ -97,7 +98,7 @@ final class TrackersViewController: UIViewController {
         let dp = UIDatePicker()
         dp.preferredDatePickerStyle = .compact
         dp.datePickerMode = .date
-        dp.locale = Locale(identifier: "ru_RU")
+        dp.locale = .current
         dp.timeZone = .current
         dp.addTarget(self, action: #selector(dateChanged(_:)), for: .valueChanged)
         return dp
@@ -148,7 +149,7 @@ final class TrackersViewController: UIViewController {
 
     // MARK: - UI setup
     private func configureNavBar() {
-        title = "Трекеры"
+        title = NSLocalizedString("trackers.title", comment: "")
         navigationController?.navigationBar.prefersLargeTitles = true
 
         let addButton = UIBarButtonItem(
@@ -309,10 +310,11 @@ final class TrackersViewController: UIViewController {
         filterButton.isHidden = !hasAnyTrackers
 
         if !hasAnyTrackers {
-            showPlaceholder(imageNamed: "placeholderStar", text: "Что будем отслеживать?")
+            showPlaceholder(imageNamed: "placeholderStar",
+                            text: NSLocalizedString("placeholder.empty", comment: ""))
         } else if (!query.isEmpty || !activeFilter.isReset) && !hasResults {
-          
-            showPlaceholder(imageNamed: "nothing", text: "Ничего не найдено")
+            showPlaceholder(imageNamed: "nothing",
+                            text: NSLocalizedString("placeholder.nothing", comment: ""))
         } else {
             hidePlaceholder()
         }
@@ -339,13 +341,12 @@ final class TrackersViewController: UIViewController {
     }
 
     private func daysText(_ n: Int) -> String {
-        switch n % 10 {
-        case 1 where n % 100 != 11: return "\(n) день"
-        case 2...4 where !(12...14).contains(n % 100): return "\(n) дня"
-        default: return "\(n) дней"
-        }
+        String.localizedStringWithFormat(
+            NSLocalizedString("days.count", comment: "pluralized days"), n
+        )
+       }
     }
-}
+
 
 // MARK: - CreateHabitDelegate
 extension TrackersViewController: CreateHabitDelegate {

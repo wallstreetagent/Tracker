@@ -38,13 +38,13 @@ final class TabBarController: UITabBarController {
         let bunny  = UIImage(named: "blue_b")?.withRenderingMode(.alwaysTemplate)
 
         trackersNC.tabBarItem = UITabBarItem(
-            title: "Трекеры",
+            title: NSLocalizedString("tab.trackers", comment: ""),
             image: record,
             selectedImage: record
         )
 
         statsNC.tabBarItem = UITabBarItem(
-            title: "Статистика",
+            title: NSLocalizedString("tab.statistics", comment: ""),
             image: bunny,
             selectedImage: bunny
         )

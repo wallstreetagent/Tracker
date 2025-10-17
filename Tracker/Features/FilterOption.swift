@@ -15,14 +15,14 @@ enum FilterOption: CaseIterable {
 
     var title: String {
         switch self {
-        case .all:         return "Все трекеры"
-        case .today:       return "Трекеры на сегодня"
-        case .completed:   return "Завершённые"
-        case .uncompleted: return "Не завершённые"
+        case .all:         return NSLocalizedString("filter.all", comment: "")
+        case .today:       return NSLocalizedString("filter.today", comment: "")
+        case .completed:   return NSLocalizedString("filter.completed", comment: "")
+        case .uncompleted: return NSLocalizedString("filter.uncompleted", comment: "")
         }
     }
 
-  
+
     var isReset: Bool {
         self == .all || self == .today
     }

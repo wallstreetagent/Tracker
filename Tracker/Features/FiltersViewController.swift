@@ -34,7 +34,7 @@ final class FiltersViewController: UIViewController, UITableViewDataSource, UITa
 
     private let titleLabel: UILabel = {
         let l = UILabel()
-        l.text = "Фильтры"
+        l.text = NSLocalizedString("filters.title", comment: "")
         l.font = .systemFont(ofSize: 16, weight: .semibold)
         l.textAlignment = .center
         return l
