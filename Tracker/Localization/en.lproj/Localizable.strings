@@ -5,3 +5,17 @@
   Created by Yanye Velikanova on 10/17/25.
   
 */
+
+"trackers.title" = "Trackers";
+"filters.title" = "Filters";
+"tab.trackers" = "Trackers";
+"tab.statistics" = "Statistics";
+
+"search.placeholder" = "Search";
+"placeholder.empty" = "What shall we track?";
+"placeholder.nothing" = "Nothing found";
+
+"filter.all" = "All trackers";
+"filter.today" = "Trackers for today";
+"filter.completed" = "Completed";
+"filter.uncompleted" = "Uncompleted";
